@@ -38,16 +38,18 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.ImageButton;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextColor;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.entity.player.Inventory;
@@ -59,6 +61,7 @@ import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeManager;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Matrix3x2fStack;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -94,9 +97,9 @@ public class GunSmithTableScreen extends AbstractContainerScreen<GunSmithTableMe
         this.getPlayerIngredientCount(this.selectedRecipe);
     }
 
-    public static void drawModCenteredString(GuiGraphics gui, Font font, Component component, int pX, int pY, int color) {
+    public static void drawModCenteredString(GuiGraphicsExtractor gui, Font font, Component component, int pX, int pY, int color) {
         FormattedCharSequence text = component.getVisualOrderText();
-        gui.drawString(font, text, pX - font.width(text) / 2, pY, color, false);
+        gui.text(font, text, pX - font.width(text) / 2, pY, color, false);
     }
 
     private void classifyRecipes() {
@@ -496,31 +499,31 @@ public class GunSmithTableScreen extends AbstractContainerScreen<GunSmithTableMe
     }
 
     @Override
-    public void render(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.render(graphics, mouseX, mouseY, partialTick);
+    public void extractRenderState(@NotNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
         drawModCenteredString(graphics, font, Component.translatable("gui.tacz.gun_smith_table.preview"), leftPos + 108, topPos + 5, 0x555555);
         if (selectedType != null) {
             var config = recipeKeys.get(selectedType);
             if (config != null) {
-                graphics.drawString(font, config.getName(), leftPos + 150, topPos + 32, 0x555555, false);
+                graphics.text(font, config.getName(), leftPos + 150, topPos + 32, 0x555555, false);
             }
         }
-        graphics.drawString(font, Component.translatable("gui.tacz.gun_smith_table.ingredient"), leftPos + 254, topPos + 50, 0x555555, false);
+        graphics.text(font, Component.translatable("gui.tacz.gun_smith_table.ingredient"), leftPos + 254, topPos + 50, 0x555555, false);
         drawModCenteredString(graphics, font, Component.translatable("gui.tacz.gun_smith_table.craft"), leftPos + 312, topPos + 167, 0xFFFFFF);
         if (!this.filterEnabled && this.selectedRecipe != null) {
             this.renderLeftModel(this.selectedRecipe);
             this.renderPackInfo(graphics, this.selectedRecipe);
-            graphics.drawString(font, Component.translatable("gui.tacz.gun_smith_table.count", this.selectedRecipe.getResult().getResult().getCount()), leftPos + 254, topPos + 140, 0x555555, false);
+            graphics.text(font, Component.translatable("gui.tacz.gun_smith_table.count", this.selectedRecipe.getResult().getResult().getCount()), leftPos + 254, topPos + 140, 0x555555, false);
         }
         if (selectedRecipeList != null && !selectedRecipeList.isEmpty()) {
             renderIngredient(graphics);
         }
 
         ((ScreenAccessor) this).tacz$getRenderables().stream().filter(w -> w instanceof ResultButton)
-                .forEach(w -> ((ResultButton) w).renderTooltips(stack -> graphics.renderTooltip(font, stack, mouseX, mouseY)));
+                .forEach(w -> ((ResultButton) w).renderTooltips(stack -> graphics.setTooltipForNextFrame(font, stack, mouseX, mouseY)));
     }
 
-    private void renderPackInfo(GuiGraphics gui, GunSmithTableRecipe recipe) {
+    private void renderPackInfo(GuiGraphicsExtractor gui, GunSmithTableRecipe recipe) {
         ItemStack output = recipe.getOutput();
         Item item = output.getItem();
         Identifier id;
@@ -535,22 +538,22 @@ public class GunSmithTableScreen extends AbstractContainerScreen<GunSmithTableMe
         }
 
         PackInfo packInfo = ClientAssetsManager.INSTANCE.getPackInfo(id);
-        PoseStack poseStack = gui.pose();
+        Matrix3x2fStack poseStack = gui.pose();
         if (packInfo != null) {
-            poseStack.pushPose();
-            poseStack.scale(0.75f, 0.75f, 1);
+            poseStack.pushMatrix();
+            poseStack.scale(0.75f, 0.75f);
             Component nameText = Component.translatable(packInfo.getName());
-            gui.drawString(font, nameText, (int) ((leftPos + 6) / 0.75f), (int) ((topPos + 122) / 0.75f), ChatFormatting.DARK_GRAY.getColor(), false);
-            poseStack.popPose();
+            gui.text(font, nameText, (int) ((leftPos + 6) / 0.75f), (int) ((topPos + 122) / 0.75f), TextColor.DARK_GRAY.getValue(), false);
+            poseStack.popMatrix();
 
-            poseStack.pushPose();
-            poseStack.scale(0.5f, 0.5f, 1);
+            poseStack.pushMatrix();
+            poseStack.scale(0.5f, 0.5f);
 
             int offsetX = (leftPos + 6) * 2;
             int offsetY = (topPos + 123) * 2;
             int nameWidth = font.width(nameText);
             Component ver = Component.literal("v" + packInfo.getVersion()).withStyle(ChatFormatting.UNDERLINE);
-            gui.drawString(font, ver, (int) (offsetX + nameWidth * 0.75f / 0.5f + 5), offsetY, ChatFormatting.DARK_GRAY.getColor(), false);
+            gui.text(font, ver, (int) (offsetX + nameWidth * 0.75f / 0.5f + 5), offsetY, TextColor.DARK_GRAY.getValue(), false);
             offsetY += 14;
 
             String descKey = packInfo.getDescription();
@@ -558,42 +561,42 @@ public class GunSmithTableScreen extends AbstractContainerScreen<GunSmithTableMe
                 Component desc = Component.translatable(descKey);
                 List<FormattedCharSequence> split = font.split(desc, 245);
                 for (FormattedCharSequence charSequence : split) {
-                    gui.drawString(font, charSequence, offsetX, offsetY, ChatFormatting.DARK_GRAY.getColor(), false);
+                    gui.text(font, charSequence, offsetX, offsetY, TextColor.DARK_GRAY.getValue(), false);
                     offsetY += font.lineHeight;
                 }
                 offsetY += 3;
             }
 
-            gui.drawString(font, Component.translatable("gui.tacz.gun_smith_table.license")
+            gui.text(font, Component.translatable("gui.tacz.gun_smith_table.license")
                             .append(Component.literal(packInfo.getLicense()).withStyle(ChatFormatting.DARK_GRAY)),
-                    offsetX, offsetY, ChatFormatting.DARK_GRAY.getColor(), false);
+                    offsetX, offsetY, TextColor.DARK_GRAY.getValue(), false);
             offsetY += 12;
 
             List<String> authors = packInfo.getAuthors();
             if (!authors.isEmpty()) {
-                gui.drawString(font, Component.translatable("gui.tacz.gun_smith_table.authors")
+                gui.text(font, Component.translatable("gui.tacz.gun_smith_table.authors")
                                 .append(Component.literal(StringUtils.join(authors, ", ")).withStyle(ChatFormatting.DARK_GRAY)),
-                        offsetX, offsetY, ChatFormatting.DARK_GRAY.getColor(), false);
+                        offsetX, offsetY, TextColor.DARK_GRAY.getValue(), false);
                 offsetY += 12;
             }
 
-            gui.drawString(font, Component.translatable("gui.tacz.gun_smith_table.date")
+            gui.text(font, Component.translatable("gui.tacz.gun_smith_table.date")
                             .append(Component.literal(packInfo.getDate()).withStyle(ChatFormatting.DARK_GRAY)),
-                    offsetX, offsetY, ChatFormatting.DARK_GRAY.getColor(), false);
+                    offsetX, offsetY, TextColor.DARK_GRAY.getValue(), false);
 
-            poseStack.popPose();
+            poseStack.popMatrix();
         } else {
             Identifier recipeId = recipe.getId();
-            gui.drawString(font, Component.translatable("gui.tacz.gun_smith_table.error").withStyle(ChatFormatting.DARK_RED), leftPos + 6, topPos + 122, 0xAF0000, false);
-            gui.drawString(font, Component.translatable("gui.tacz.gun_smith_table.error.id", recipeId.toString()).withStyle(ChatFormatting.DARK_RED), leftPos + 6, topPos + 134, 0xFFFFFF, false);
+            gui.text(font, Component.translatable("gui.tacz.gun_smith_table.error").withStyle(ChatFormatting.DARK_RED), leftPos + 6, topPos + 122, 0xAF0000, false);
+            gui.text(font, Component.translatable("gui.tacz.gun_smith_table.error.id", recipeId.toString()).withStyle(ChatFormatting.DARK_RED), leftPos + 6, topPos + 134, 0xFFFFFF, false);
             PackInfo errorPackInfo = ClientAssetsManager.INSTANCE.getPackInfo(id);
             if (errorPackInfo != null) {
-                gui.drawString(font, Component.translatable(errorPackInfo.getName()).withStyle(ChatFormatting.DARK_RED), leftPos + 6, topPos + 146, 0xAF0000, false);
+                gui.text(font, Component.translatable(errorPackInfo.getName()).withStyle(ChatFormatting.DARK_RED), leftPos + 6, topPos + 146, 0xAF0000, false);
             }
         }
     }
 
-    private void renderIngredient(GuiGraphics gui) {
+    private void renderIngredient(GuiGraphicsExtractor gui) {
         if (this.selectedRecipe == null) {
             return;
         }
@@ -614,27 +617,26 @@ public class GunSmithTableScreen extends AbstractContainerScreen<GunSmithTableMe
                 int itemIndex = ((int) (System.currentTimeMillis() / 1_000)) % items.length;
                 ItemStack item = items[itemIndex];
 
-                gui.renderFakeItem(item, offsetX, offsetY);
+                gui.fakeItem(item, offsetX, offsetY);
 
-                PoseStack poseStack = gui.pose();
-                poseStack.pushPose();
+                Matrix3x2fStack poseStack = gui.pose();
+                poseStack.pushMatrix();
 
-                poseStack.translate(0, 0, 200);
-                poseStack.scale(0.5f, 0.5f, 1);
+                poseStack.scale(0.5f, 0.5f);
                 int count = smithTableIngredient.getCount();
                 if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.isCreative()) {
-                    gui.drawString(font, String.format("%d/∞", count), (offsetX + 17) * 2, (offsetY + 10) * 2, 0xFFFFFF, false);
+                    gui.text(font, String.format("%d/∞", count), (offsetX + 17) * 2, (offsetY + 10) * 2, 0xFFFFFF, false);
                 } else {
                     int hasCount = 0;
                     if (playerIngredientCount != null && index < playerIngredientCount.size()) {
                         hasCount = playerIngredientCount.get(index);
                     }
                     int color = count <= hasCount ? 0xFFFFFF : 0xFF0000;
-                    gui.drawString(font, String.format("%d/%d", count, hasCount), (offsetX + 17) * 2, (offsetY + 10) * 2, color, false);
+                    gui.text(font, String.format("%d/%d", count, hasCount), (offsetX + 17) * 2, (offsetY + 10) * 2, color, false);
                 }
 
 
-                poseStack.popPose();
+                poseStack.popMatrix();
             }
         }
     }
@@ -692,14 +694,14 @@ public class GunSmithTableScreen extends AbstractContainerScreen<GunSmithTableMe
     }
 
     @Override
-    protected void renderLabels(@NotNull GuiGraphics gui, int mouseX, int mouseY) {
+    protected void extractLabels(@NotNull GuiGraphicsExtractor gui, int mouseX, int mouseY) {
     }
 
     @Override
-    protected void renderBg(@NotNull GuiGraphics gui, float partialTick, int mouseX, int mouseY) {
-        this.renderBackground(gui);
-        gui.blit(SIDE, leftPos, topPos, 0, 0, 134, 187);
-        gui.blit(TEXTURE, leftPos + 136, topPos + 27, 0, 0, 208, 160);
+    protected void extractContents(@NotNull GuiGraphicsExtractor gui, int mouseX, int mouseY, float partialTick) {
+        this.extractBackground(gui, mouseX, mouseY, partialTick);
+        gui.blit(RenderPipelines.GUI_TEXTURED, SIDE, leftPos, topPos, 0, 0, 134, 187, 256, 256);
+        gui.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, leftPos + 136, topPos + 27, 0, 0, 208, 160, 256, 256);
     }
 
     @Override

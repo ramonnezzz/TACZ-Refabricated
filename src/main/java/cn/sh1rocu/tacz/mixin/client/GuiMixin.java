@@ -1,13 +1,13 @@
 package cn.sh1rocu.tacz.mixin.client;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.client.event.PreventsHotbarEvent;
 import com.tacz.guns.client.event.RenderCrosshairEvent;
 import com.tacz.guns.compat.immediatelyfast.ImmediatelyFastCompat;
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.Hud;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -18,20 +18,22 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-@Mixin(Gui.class)
+// Gui.render/renderSlot/renderCrosshair sumiram na 26.2: o desenho de HUD (crosshair, hotbar
+// etc.) foi todo movido pra classe Hud (Gui.hud), com os métodos renomeados pro padrão extract*.
+@Mixin(Hud.class)
 public class GuiMixin {
-    @Inject(method = "renderSlot", at = @At("HEAD"))
-    private void tacz$renderHotbarItemPre(GuiGraphics context, int x, int y, float f, Player player, ItemStack stack, int seed, CallbackInfo ci) {
+    @Inject(method = "extractSlot", at = @At("HEAD"))
+    private void tacz$renderHotbarItemPre(GuiGraphicsExtractor context, int x, int y, DeltaTracker deltaTracker, Player player, ItemStack stack, int seed, CallbackInfo ci) {
         ImmediatelyFastCompat.renderHotbarItem(stack, true);
     }
 
-    @Inject(method = "renderSlot", at = @At("RETURN"))
-    private void tacz$renderHotbarItemPost(GuiGraphics context, int x, int y, float f, Player player, ItemStack stack, int seed, CallbackInfo ci) {
+    @Inject(method = "extractSlot", at = @At("RETURN"))
+    private void tacz$renderHotbarItemPost(GuiGraphicsExtractor context, int x, int y, DeltaTracker deltaTracker, Player player, ItemStack stack, int seed, CallbackInfo ci) {
         ImmediatelyFastCompat.renderHotbarItem(stack, false);
     }
 
-    @Inject(method = "render", at = @At("HEAD"), cancellable = true)
-    private void tacz$onRender(GuiGraphics context, float tickDelta, CallbackInfo ci) {
+    @Inject(method = "extractRenderState", at = @At("HEAD"), cancellable = true)
+    private void tacz$onRender(GuiGraphicsExtractor context, DeltaTracker deltaTracker, CallbackInfo ci) {
         AtomicBoolean cancelled = new AtomicBoolean(false);
         PreventsHotbarEvent.onRenderHotbarEvent(cancelled);
         if (cancelled.get()) {
@@ -39,14 +41,10 @@ public class GuiMixin {
         }
     }
 
-    @Inject(method = "render", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderSystem;enableBlend()V", ordinal = 1, shift = At.Shift.BEFORE, remap = false))
-    private void tacz$renderCrosshairPre(GuiGraphics context, float tickDelta, CallbackInfo ci) {
-        RenderCrosshairEvent.onRenderOverlay(context, Minecraft.getInstance().getWindow());
-    }
-
-    // 需要渲染枪械准心时取消原版渲染
-    @Inject(method = "renderCrosshair", at = @At("HEAD"), cancellable = true)
-    private void tacz$renderCrosshair(GuiGraphics context, CallbackInfo ci) {
+    // extractCrosshair agora concentra o que antes era render()+renderCrosshair() separados:
+    // se o jogador está segurando uma arma, desenha o crosshair do TACZ e cancela o vanilla.
+    @Inject(method = "extractCrosshair", at = @At("HEAD"), cancellable = true)
+    private void tacz$renderCrosshair(GuiGraphicsExtractor context, DeltaTracker deltaTracker, CallbackInfo ci) {
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null) {
             return;
@@ -55,7 +53,7 @@ public class GuiMixin {
             return;
         }
 
-        RenderSystem.defaultBlendFunc();
+        RenderCrosshairEvent.onRenderOverlay(context, Minecraft.getInstance().getWindow());
 
         ci.cancel();
     }

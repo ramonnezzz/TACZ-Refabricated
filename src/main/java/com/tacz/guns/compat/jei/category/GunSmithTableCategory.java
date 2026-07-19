@@ -78,7 +78,16 @@ public class GunSmithTableCategory implements IRecipeCategory<GunSmithTableRecip
     }
 
     @Override
-    @SuppressWarnings("removal")
+    public int getWidth() {
+        return bgDraw.getWidth();
+    }
+
+    @Override
+    public int getHeight() {
+        return bgDraw.getHeight();
+    }
+
+    // getBackground() saiu da interface (JEI agora só usa getHeight() + o layout dos slots pro tamanho)
     public IDrawable getBackground() {
         return bgDraw;
     }
