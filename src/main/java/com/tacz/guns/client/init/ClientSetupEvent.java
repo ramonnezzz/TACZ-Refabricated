@@ -1,5 +1,6 @@
 package com.tacz.guns.client.init;
 
+import com.tacz.guns.GunMod;
 import com.tacz.guns.api.client.other.ThirdPersonManager;
 import com.tacz.guns.client.gui.overlay.GunHudOverlay;
 import com.tacz.guns.client.gui.overlay.HeatBarOverlay;
@@ -31,11 +32,12 @@ import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.TooltipComponentCallback;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.renderer.item.ItemProperties;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackType;
 
 @Environment(EnvType.CLIENT)
@@ -90,11 +92,11 @@ public class ClientSetupEvent {
     }
 
     public static void registerGuiOverlays() {
-        // 注册 HUD
-        HudRenderCallback.EVENT.register(GunHudOverlay::render);
-        HudRenderCallback.EVENT.register(HeatBarOverlay::render);
-        HudRenderCallback.EVENT.register(InteractKeyTextOverlay::render);
-        HudRenderCallback.EVENT.register(KillAmountOverlay::render);
+        // 注册 HUD (HudRenderCallback foi substituído por HudElementRegistry)
+        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "gun_hud"), GunHudOverlay::extractRenderState);
+        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "heat_bar"), HeatBarOverlay::extractRenderState);
+        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "interact_key_text"), InteractKeyTextOverlay::extractRenderState);
+        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "kill_amount"), KillAmountOverlay::extractRenderState);
     }
 
     public static void onClientSetup() {

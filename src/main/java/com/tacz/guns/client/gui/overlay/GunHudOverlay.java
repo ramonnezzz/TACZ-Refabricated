@@ -1,7 +1,5 @@
 package com.tacz.guns.client.gui.overlay;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.tacz.guns.GunMod;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.client.gameplay.IClientPlayerGunOperator;
@@ -19,15 +17,17 @@ import com.tacz.guns.resource.pojo.data.gun.GunData;
 import com.tacz.guns.util.AttachmentDataUtils;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.SharedConstants;
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix3x2fStack;
 
 import java.text.DecimalFormat;
 
@@ -47,7 +47,7 @@ public class GunHudOverlay {
 
     private static final int MAX_AMMO_COUNT = 9999;
 
-    public static void render(GuiGraphics graphics, float partialTick) {
+    public static void extractRenderState(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
         int width = graphics.guiWidth();
         int height = graphics.guiHeight();
 
@@ -120,50 +120,46 @@ public class GunHudOverlay {
         // 竖线
         graphics.fill(width - 75, height - 43, width - 74, height - 25, 0xFFFFFFFF);
 
-        PoseStack poseStack = graphics.pose();
+        Matrix3x2fStack poseStack = graphics.pose();
 
         Font font = mc.font;
 
         // 数字
-        poseStack.pushPose();
-        poseStack.scale(1.5f, 1.5f, 1);
-        graphics.drawString(font, currentAmmoCountText, (int) ((width - 70) / 1.5f), (int) ((height - 43) / 1.5f), ammoCountColor, false);
-        poseStack.popPose();
+        poseStack.pushMatrix();
+        poseStack.scale(1.5f, 1.5f);
+        graphics.text(font, currentAmmoCountText, (int) ((width - 70) / 1.5f), (int) ((height - 43) / 1.5f), ammoCountColor, false);
+        poseStack.popMatrix();
 
-        poseStack.pushPose();
-        poseStack.scale(0.8f, 0.8f, 1);
-        graphics.drawString(font, inventoryAmmoCountText, (int) ((width - 68 + mc.font.width(currentAmmoCountText) * 1.5f) / 0.8f), (int) ((height - 43) / 0.8f), inventoryAmmoCountColor, false);
-        poseStack.popPose();
+        poseStack.pushMatrix();
+        poseStack.scale(0.8f, 0.8f);
+        graphics.text(font, inventoryAmmoCountText, (int) ((width - 68 + mc.font.width(currentAmmoCountText) * 1.5f) / 0.8f), (int) ((height - 43) / 0.8f), inventoryAmmoCountColor, false);
+        poseStack.popMatrix();
 
         // 模组版本信息
-        String minecraftVersion = SharedConstants.getCurrentVersion().getName();
+        String minecraftVersion = SharedConstants.getCurrentVersion().name();
         String modVersion = FabricLoader.getInstance().getModContainer(GunMod.MOD_ID).orElseThrow().getMetadata().getVersion().getFriendlyString();
         String debugInfo = String.format("%s-%s", minecraftVersion, modVersion);
         // 文本
-        poseStack.pushPose();
-        poseStack.scale(0.5f, 0.5f, 1);
-        graphics.drawString(font, debugInfo, (int) ((width - 70) / 0.5f), (int) ((height - 29f) / 0.5f), 0xffaaaaaa);
-        poseStack.popPose();
-
-        // 图标渲染
-        RenderSystem.enableDepthTest();
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
+        poseStack.pushMatrix();
+        poseStack.scale(0.5f, 0.5f);
+        graphics.text(font, debugInfo, (int) ((width - 70) / 0.5f), (int) ((height - 29f) / 0.5f), 0xffaaaaaa);
+        poseStack.popMatrix();
 
         // 获取图标
         Identifier hudTexture = display.getHUDTexture();
         @Nullable Identifier hudEmptyTexture = display.getHudEmptyTexture();
 
+        // Sem RenderSystem.setShaderColor persistente: a cor vai direto no blit
+        int hudTint = 0xFFFFFFFF;
         if (ammoCount <= 0 || overheatLocked) {
             if (hudEmptyTexture == null) {
-                RenderSystem.setShaderColor(1, 0.3f, 0.3f, 1);
+                hudTint = 0xFFFF4D4D;
             } else {
                 hudTexture = hudEmptyTexture;
             }
         }
         // 渲染枪械图标
-        graphics.blit(hudTexture, width - 117, height - 44, 0, 0, 39, 13, 39, 13);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, hudTexture, width - 117, height - 44, 0, 0, 39, 13, 39, 13, hudTint);
 
         // 渲染开火模式图标
         FireMode fireMode = IGun.getMainHandFireMode(player);
@@ -172,8 +168,7 @@ public class GunHudOverlay {
             case BURST -> BURST;
             default -> SEMI;
         };
-        RenderSystem.setShaderColor(1, 1, 1, 1);
-        graphics.blit(fireModeTexture, (int) (width - 68.5 + mc.font.width(currentAmmoCountText) * 1.5), height - 38, 0, 0, 10, 10, 10, 10);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, fireModeTexture, (int) (width - 68.5 + mc.font.width(currentAmmoCountText) * 1.5), height - 38, 0, 0, 10, 10, 10, 10, 0xFFFFFFFF);
     }
 
     private static void handleCacheCount(LocalPlayer player, ItemStack stack, GunData gunData, IGun iGun, boolean useInventoryAmmo) {
