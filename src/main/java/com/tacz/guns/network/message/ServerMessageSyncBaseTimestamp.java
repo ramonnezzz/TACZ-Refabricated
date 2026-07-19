@@ -31,7 +31,7 @@ public class ServerMessageSyncBaseTimestamp implements CustomPacketPayload {
 
     }
 
-        public void write(FriendlyByteBuf buf) {
+    public void write(FriendlyByteBuf buf) {
 
     }
 

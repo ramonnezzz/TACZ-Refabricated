@@ -33,7 +33,7 @@ public class ClientMessageRefitGun implements CustomPacketPayload {
         this.attachmentType = attachmentType;
     }
 
-        public void write(FriendlyByteBuf buf) {
+    public void write(FriendlyByteBuf buf) {
         buf.writeInt(attachmentSlotIndex);
         buf.writeInt(gunSlotIndex);
         buf.writeEnum(attachmentType);

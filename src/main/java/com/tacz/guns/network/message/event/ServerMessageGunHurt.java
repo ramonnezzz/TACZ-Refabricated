@@ -51,7 +51,7 @@ public class ServerMessageGunHurt implements CustomPacketPayload {
         this.headshotMultiplier = headshotMultiplier;
     }
 
-        public void write(FriendlyByteBuf buf) {
+    public void write(FriendlyByteBuf buf) {
         buf.writeInt(bulletId);
         buf.writeInt(hurtEntityId);
         buf.writeInt(attackerId);

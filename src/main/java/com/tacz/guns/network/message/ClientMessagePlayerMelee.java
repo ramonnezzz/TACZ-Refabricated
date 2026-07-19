@@ -21,7 +21,7 @@ public class ClientMessagePlayerMelee implements CustomPacketPayload {
 
     }
 
-        public void write(FriendlyByteBuf buf) {
+    public void write(FriendlyByteBuf buf) {
 
     }
 

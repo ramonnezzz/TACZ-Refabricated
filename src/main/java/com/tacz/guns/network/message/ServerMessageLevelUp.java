@@ -7,6 +7,7 @@ import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
@@ -21,7 +22,7 @@ public class ServerMessageLevelUp implements CustomPacketPayload {
     private final int level;
 
     public ServerMessageLevelUp(FriendlyByteBuf buf) {
-        this(buf.readItem(), buf.readInt());
+        this(ItemStack.OPTIONAL_STREAM_CODEC.decode((RegistryFriendlyByteBuf) buf), buf.readInt());
     }
 
     public ServerMessageLevelUp(ItemStack gun, int level) {
@@ -29,8 +30,8 @@ public class ServerMessageLevelUp implements CustomPacketPayload {
         this.level = level;
     }
 
-        public void write(FriendlyByteBuf buf) {
-        buf.writeItem(gun);
+    public void write(FriendlyByteBuf buf) {
+        ItemStack.OPTIONAL_STREAM_CODEC.encode((RegistryFriendlyByteBuf) buf, gun);
         buf.writeInt(level);
     }
 

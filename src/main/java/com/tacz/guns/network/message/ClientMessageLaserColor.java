@@ -56,7 +56,7 @@ public class ClientMessageLaserColor implements CustomPacketPayload {
         }
     }
 
-        public void write(FriendlyByteBuf buf) {
+    public void write(FriendlyByteBuf buf) {
         buf.writeMap(colorMap, FriendlyByteBuf::writeEnum, FriendlyByteBuf::writeInt);
         buf.writeBoolean(applyGunColor);
         buf.writeInt(gunColor);

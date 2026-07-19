@@ -24,7 +24,7 @@ public class ClientMessagePlayerCrawl implements CustomPacketPayload {
         this.isCrawl = buf.readBoolean();
     }
 
-        public void write(FriendlyByteBuf buf) {
+    public void write(FriendlyByteBuf buf) {
         buf.writeBoolean(isCrawl);
     }
 

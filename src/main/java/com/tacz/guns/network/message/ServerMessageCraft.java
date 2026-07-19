@@ -27,7 +27,7 @@ public class ServerMessageCraft implements CustomPacketPayload {
         this(buf.readVarInt());
     }
 
-        public void write(FriendlyByteBuf buf) {
+    public void write(FriendlyByteBuf buf) {
         buf.writeVarInt(menuId);
     }
 

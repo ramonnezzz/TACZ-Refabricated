@@ -25,7 +25,7 @@ public class ClientMessageCraft implements CustomPacketPayload {
         this.menuId = menuId;
     }
 
-        public void write(FriendlyByteBuf buf) {
+    public void write(FriendlyByteBuf buf) {
         buf.writeIdentifier(recipeId);
         buf.writeVarInt(menuId);
     }

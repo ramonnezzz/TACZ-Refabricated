@@ -42,7 +42,7 @@ public class ServerMessageSound implements CustomPacketPayload {
         this(entityId, gunId, DefaultAssets.DEFAULT_GUN_DISPLAY_ID, soundName, volume, pitch, distance);
     }
 
-        public void write(FriendlyByteBuf buf) {
+    public void write(FriendlyByteBuf buf) {
         buf.writeVarInt(entityId);
         buf.writeIdentifier(gunId);
         buf.writeIdentifier(gunDisplayId);

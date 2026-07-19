@@ -10,6 +10,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
@@ -25,7 +26,7 @@ public class ServerMessageGunDraw implements CustomPacketPayload {
     private final ItemStack currentGunItem;
 
     public ServerMessageGunDraw(FriendlyByteBuf buf) {
-        this(buf.readVarInt(), buf.readItem(), buf.readItem());
+        this(buf.readVarInt(), ItemStack.OPTIONAL_STREAM_CODEC.decode((RegistryFriendlyByteBuf) buf), ItemStack.OPTIONAL_STREAM_CODEC.decode((RegistryFriendlyByteBuf) buf));
     }
 
     public ServerMessageGunDraw(int entityId, ItemStack previousGunItem, ItemStack currentGunItem) {
@@ -34,10 +35,10 @@ public class ServerMessageGunDraw implements CustomPacketPayload {
         this.currentGunItem = currentGunItem;
     }
 
-        public void write(FriendlyByteBuf buf) {
+    public void write(FriendlyByteBuf buf) {
         buf.writeVarInt(entityId);
-        buf.writeItem(previousGunItem);
-        buf.writeItem(currentGunItem);
+        ItemStack.OPTIONAL_STREAM_CODEC.encode((RegistryFriendlyByteBuf) buf, previousGunItem);
+        ItemStack.OPTIONAL_STREAM_CODEC.encode((RegistryFriendlyByteBuf) buf, currentGunItem);
     }
 
     @Override

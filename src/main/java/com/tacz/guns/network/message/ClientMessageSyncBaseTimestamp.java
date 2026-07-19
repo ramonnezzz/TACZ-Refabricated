@@ -26,7 +26,7 @@ public class ClientMessageSyncBaseTimestamp implements CustomPacketPayload {
 
     }
 
-        public void write(FriendlyByteBuf buf) {
+    public void write(FriendlyByteBuf buf) {
 
     }
 

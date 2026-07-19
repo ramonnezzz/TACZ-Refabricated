@@ -43,7 +43,7 @@ public class ServerMessageUpdateEntityData implements CustomPacketPayload {
         this.entries = entries;
     }
 
-        public void write(FriendlyByteBuf buffer) {
+    public void write(FriendlyByteBuf buffer) {
         buffer.writeVarInt(entityId);
         buffer.writeVarInt(entries.size());
         entries.forEach(entry -> entry.write(buffer));

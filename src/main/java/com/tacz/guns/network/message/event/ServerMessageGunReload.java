@@ -10,6 +10,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
@@ -24,7 +25,7 @@ public class ServerMessageGunReload implements CustomPacketPayload {
     private final ItemStack gunItemStack;
 
     public ServerMessageGunReload(FriendlyByteBuf buf) {
-        this(buf.readVarInt(), buf.readItem());
+        this(buf.readVarInt(), ItemStack.OPTIONAL_STREAM_CODEC.decode((RegistryFriendlyByteBuf) buf));
     }
 
     public ServerMessageGunReload(int shooterId, ItemStack gunItemStack) {
@@ -32,9 +33,9 @@ public class ServerMessageGunReload implements CustomPacketPayload {
         this.gunItemStack = gunItemStack;
     }
 
-        public void write(FriendlyByteBuf buf) {
+    public void write(FriendlyByteBuf buf) {
         buf.writeVarInt(shooterId);
-        buf.writeItem(gunItemStack);
+        ItemStack.OPTIONAL_STREAM_CODEC.encode((RegistryFriendlyByteBuf) buf, gunItemStack);
     }
 
     @Override

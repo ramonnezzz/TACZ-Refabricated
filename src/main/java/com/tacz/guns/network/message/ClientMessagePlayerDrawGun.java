@@ -22,7 +22,7 @@ public class ClientMessagePlayerDrawGun implements CustomPacketPayload {
         this();
     }
 
-        public void write(FriendlyByteBuf buf) {
+    public void write(FriendlyByteBuf buf) {
 
     }
 

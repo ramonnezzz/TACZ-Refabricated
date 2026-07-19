@@ -32,7 +32,7 @@ public class ClientMessagePlayerShoot implements CustomPacketPayload {
         this(buf.readLong(), buf.readFloat());
     }
 
-        public void write(FriendlyByteBuf buf) {
+    public void write(FriendlyByteBuf buf) {
         buf.writeLong(timestamp);
         buf.writeFloat(chargeProgress);
     }

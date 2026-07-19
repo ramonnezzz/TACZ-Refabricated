@@ -23,7 +23,7 @@ public class ClientMessagePlayerAim implements CustomPacketPayload {
         this.isAim = buf.readBoolean();
     }
 
-        public void write(FriendlyByteBuf buf) {
+    public void write(FriendlyByteBuf buf) {
         buf.writeBoolean(isAim);
     }
 

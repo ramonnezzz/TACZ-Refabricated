@@ -5,6 +5,7 @@ import com.tacz.guns.crafting.result.GunSmithTableResult;
 import com.tacz.guns.resource.CommonAssetsManager;
 import com.tacz.guns.resource.pojo.data.recipe.TableRecipe;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -36,7 +37,7 @@ public class GunSmithTableSerializer implements RecipeSerializer<GunSmithTableRe
         for (int i = 0; i < size; i++) {
             ingredients.add(new GunSmithTableIngredient(Ingredient.fromNetwork(buffer), buffer.readInt()));
         }
-        ItemStack resultItem = buffer.readItem();
+        ItemStack resultItem = ItemStack.OPTIONAL_STREAM_CODEC.decode((RegistryFriendlyByteBuf) buffer);
         Identifier group = buffer.readIdentifier();
         GunSmithTableResult result = new GunSmithTableResult(resultItem, group);
         return new GunSmithTableRecipe(recipeId, result, ingredients);
@@ -49,7 +50,7 @@ public class GunSmithTableSerializer implements RecipeSerializer<GunSmithTableRe
             ingredient.getIngredient().toNetwork(buffer);
             buffer.writeInt(ingredient.getCount());
         }
-        buffer.writeItem(recipe.getResult().getResult());
+        ItemStack.OPTIONAL_STREAM_CODEC.encode((RegistryFriendlyByteBuf) buffer, recipe.getResult().getResult());
         buffer.writeIdentifier(recipe.getResult().getGroup());
     }
 }

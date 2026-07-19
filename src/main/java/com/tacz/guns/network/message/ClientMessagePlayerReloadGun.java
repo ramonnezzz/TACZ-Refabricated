@@ -21,7 +21,7 @@ public class ClientMessagePlayerReloadGun implements CustomPacketPayload {
         this();
     }
 
-        public void write(FriendlyByteBuf buf) {
+    public void write(FriendlyByteBuf buf) {
 
     }
 

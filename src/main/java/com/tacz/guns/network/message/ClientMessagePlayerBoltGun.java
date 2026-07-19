@@ -21,7 +21,7 @@ public class ClientMessagePlayerBoltGun implements CustomPacketPayload {
         this();
     }
 
-        public void write(FriendlyByteBuf buf) {
+    public void write(FriendlyByteBuf buf) {
     }
 
     @Override

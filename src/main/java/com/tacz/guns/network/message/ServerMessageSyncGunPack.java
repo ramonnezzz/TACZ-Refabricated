@@ -31,7 +31,7 @@ public class ServerMessageSyncGunPack implements CustomPacketPayload {
         this.cache = cache;
     }
 
-        public void write(FriendlyByteBuf buf) {
+    public void write(FriendlyByteBuf buf) {
         buf.writeMap(getCache(), FriendlyByteBuf::writeEnum, (buf1, map) ->
                 buf1.writeMap(map, FriendlyByteBuf::writeIdentifier, FriendlyByteBuf::writeUtf));
     }

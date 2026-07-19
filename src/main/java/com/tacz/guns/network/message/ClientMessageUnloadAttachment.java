@@ -30,7 +30,7 @@ public class ClientMessageUnloadAttachment implements CustomPacketPayload {
         this.attachmentType = attachmentType;
     }
 
-        public void write(FriendlyByteBuf buf) {
+    public void write(FriendlyByteBuf buf) {
         buf.writeInt(gunSlotIndex);
         buf.writeEnum(attachmentType);
     }
