@@ -11,10 +11,10 @@ import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class ServerMessageRefreshRefitScreen implements FabricPacket {
-    public static final PacketType<ServerMessageRefreshRefitScreen> TYPE = PacketType.create(new ResourceLocation(GunMod.MOD_ID, "s2c_refresh_refit_screen"), ServerMessageRefreshRefitScreen::new);
+    public static final PacketType<ServerMessageRefreshRefitScreen> TYPE = PacketType.create(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "s2c_refresh_refit_screen"), ServerMessageRefreshRefitScreen::new);
 
     public ServerMessageRefreshRefitScreen() {
 

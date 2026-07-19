@@ -8,14 +8,14 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundBundlePacket;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 
 import java.util.List;
 
 // Porting_Lib
 public interface IEntityAdditionalSpawnData {
-    ResourceLocation EXTRA_DATA_PACKET = new ResourceLocation(GunMod.MOD_ID, "extra_entity_spawn_data");
+    Identifier EXTRA_DATA_PACKET = Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "extra_entity_spawn_data");
 
     void readSpawnData(FriendlyByteBuf buf);
 

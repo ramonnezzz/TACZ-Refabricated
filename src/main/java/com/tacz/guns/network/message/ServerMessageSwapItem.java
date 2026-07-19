@@ -7,10 +7,10 @@ import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class ServerMessageSwapItem implements FabricPacket {
-    public static final PacketType<ServerMessageSwapItem> TYPE = PacketType.create(new ResourceLocation(GunMod.MOD_ID, "s2c_swap_item"), ServerMessageSwapItem::new);
+    public static final PacketType<ServerMessageSwapItem> TYPE = PacketType.create(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "s2c_swap_item"), ServerMessageSwapItem::new);
 
     public ServerMessageSwapItem() {
 

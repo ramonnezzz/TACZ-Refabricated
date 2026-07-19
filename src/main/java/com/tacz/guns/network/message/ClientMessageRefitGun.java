@@ -10,13 +10,13 @@ import net.fabricmc.fabric.api.networking.v1.FabricPacket;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 
 public class ClientMessageRefitGun implements FabricPacket {
-    public static final PacketType<ClientMessageRefitGun> TYPE = PacketType.create(new ResourceLocation(GunMod.MOD_ID, "c2s_player_refit"), ClientMessageRefitGun::new);
+    public static final PacketType<ClientMessageRefitGun> TYPE = PacketType.create(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "c2s_player_refit"), ClientMessageRefitGun::new);
 
     private final int attachmentSlotIndex;
     private final int gunSlotIndex;

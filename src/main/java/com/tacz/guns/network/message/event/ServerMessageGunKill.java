@@ -12,20 +12,20 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 
 import javax.annotation.Nullable;
 
 public class ServerMessageGunKill implements FabricPacket {
-    public static final PacketType<ServerMessageGunKill> TYPE = PacketType.create(new ResourceLocation(GunMod.MOD_ID, "s2c_gunkill"), ServerMessageGunKill::new);
+    public static final PacketType<ServerMessageGunKill> TYPE = PacketType.create(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "s2c_gunkill"), ServerMessageGunKill::new);
 
     private final int bulletId;
     private final int killEntityId;
     private final int attackerId;
-    private final ResourceLocation gunId;
-    private final ResourceLocation gunDisplayId;
+    private final Identifier gunId;
+    private final Identifier gunDisplayId;
     private final boolean isHeadShot;
     private final float baseDamage;
     private final float headshotMultiplier;
@@ -38,7 +38,7 @@ public class ServerMessageGunKill implements FabricPacket {
         );
     }
 
-    public ServerMessageGunKill(int bulletId, int killEntityId, int attackerId, ResourceLocation gunId, ResourceLocation gunDisplayId, float baseDamage, boolean isHeadShot, float headshotMultiplier) {
+    public ServerMessageGunKill(int bulletId, int killEntityId, int attackerId, Identifier gunId, Identifier gunDisplayId, float baseDamage, boolean isHeadShot, float headshotMultiplier) {
         this.bulletId = bulletId;
         this.killEntityId = killEntityId;
         this.attackerId = attackerId;

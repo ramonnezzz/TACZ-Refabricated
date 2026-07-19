@@ -11,14 +11,14 @@ import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
 import java.util.Objects;
 
 public class ServerMessageSyncBaseTimestamp implements FabricPacket {
-    public static final PacketType<ServerMessageSyncBaseTimestamp> TYPE = PacketType.create(new ResourceLocation(GunMod.MOD_ID, "s2c_sync_base_timestamp"), ServerMessageSyncBaseTimestamp::new);
+    public static final PacketType<ServerMessageSyncBaseTimestamp> TYPE = PacketType.create(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "s2c_sync_base_timestamp"), ServerMessageSyncBaseTimestamp::new);
 
     private static final Marker MARKER = MarkerFactory.getMarker("SYNC_BASE_TIMESTAMP");
 

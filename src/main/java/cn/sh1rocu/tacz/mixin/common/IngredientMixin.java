@@ -7,7 +7,7 @@ import com.google.gson.JsonObject;
 import net.fabricmc.fabric.api.recipe.v1.ingredient.CustomIngredient;
 import net.fabricmc.fabric.api.recipe.v1.ingredient.CustomIngredientSerializer;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.crafting.Ingredient;
 import org.spongepowered.asm.mixin.Mixin;
@@ -51,7 +51,7 @@ public abstract class IngredientMixin {
         JsonObject obj = json.getAsJsonObject();
 
         if (obj.has("type")) {
-            ResourceLocation id = new ResourceLocation(GsonHelper.getAsString(obj, "type"));
+            Identifier id = Identifier.parse(GsonHelper.getAsString(obj, "type"));
             CustomIngredientSerializer<?> serializer = null;
 
             if (id.equals(StrictNBTIngredient.ID)) serializer = StrictNBTIngredient.Serializer.INSTANCE;
@@ -72,7 +72,7 @@ public abstract class IngredientMixin {
         int index = buf.readerIndex();
         try {
             if (buf.readUtf().equals("tacz_ingredient")) {
-                ResourceLocation id = buf.readResourceLocation();
+                Identifier id = buf.readResourceLocation();
                 CustomIngredientSerializer<?> serializer = null;
 
                 if (id.equals(StrictNBTIngredient.ID)) serializer = StrictNBTIngredient.Serializer.INSTANCE;
@@ -96,7 +96,7 @@ public abstract class IngredientMixin {
         if (element != null && !element.isJsonNull() && element.isJsonObject()) {
             JsonObject obj = element.getAsJsonObject();
             if (obj.has("type")) {
-                ResourceLocation id = new ResourceLocation(GsonHelper.getAsString(obj, "type"));
+                Identifier id = Identifier.parse(GsonHelper.getAsString(obj, "type"));
                 CustomIngredientSerializer serializer = null;
 
                 if (id.equals(StrictNBTIngredient.ID)) serializer = StrictNBTIngredient.Serializer.INSTANCE;

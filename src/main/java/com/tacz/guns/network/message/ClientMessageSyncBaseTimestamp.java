@@ -7,13 +7,13 @@ import net.fabricmc.fabric.api.networking.v1.FabricPacket;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
 public class ClientMessageSyncBaseTimestamp implements FabricPacket {
-    public static final PacketType<ClientMessageSyncBaseTimestamp> TYPE = PacketType.create(new ResourceLocation(GunMod.MOD_ID, "c2s_sync_base_timestamp"), ClientMessageSyncBaseTimestamp::new);
+    public static final PacketType<ClientMessageSyncBaseTimestamp> TYPE = PacketType.create(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "c2s_sync_base_timestamp"), ClientMessageSyncBaseTimestamp::new);
 
     private static final Marker MARKER = MarkerFactory.getMarker("SYNC_BASE_TIMESTAMP");
 

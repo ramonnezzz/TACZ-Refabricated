@@ -5,7 +5,7 @@ import com.tacz.guns.api.item.nbt.BlockItemDataAccessor;
 import com.tacz.guns.block.entity.GunSmithTableBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -69,7 +69,7 @@ public abstract class AbstractGunSmithTableBlock extends BaseEntityBlock {
         super.setPlacedBy(world, pos, state, placer, stack);
         if (!world.isClientSide) {
             if (stack.getItem() instanceof BlockItemDataAccessor accessor) {
-                ResourceLocation id = accessor.getBlockId(stack);
+                Identifier id = accessor.getBlockId(stack);
                 BlockEntity blockentity = world.getBlockEntity(pos);
                 if (blockentity instanceof GunSmithTableBlockEntity e) {
                     e.setId(id);

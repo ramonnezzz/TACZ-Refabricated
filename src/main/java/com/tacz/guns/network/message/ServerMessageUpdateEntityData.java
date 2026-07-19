@@ -11,7 +11,7 @@ import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 
@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ServerMessageUpdateEntityData implements FabricPacket {
-    public static final PacketType<ServerMessageUpdateEntityData> TYPE = PacketType.create(new ResourceLocation(GunMod.MOD_ID, "s2c_update_entity_data"), ServerMessageUpdateEntityData::new);
+    public static final PacketType<ServerMessageUpdateEntityData> TYPE = PacketType.create(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "s2c_update_entity_data"), ServerMessageUpdateEntityData::new);
 
     private final int entityId;
     private final List<DataEntry<?, ?>> entries;

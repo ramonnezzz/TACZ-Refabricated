@@ -29,7 +29,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.networking.v1.EntityTrackingEvents;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.fml.config.ModConfig;
 import org.jetbrains.annotations.Nullable;
@@ -37,10 +37,10 @@ import org.jetbrains.annotations.Nullable;
 import java.lang.ref.WeakReference;
 
 public class TaCZFabric implements ModInitializer {
-    public static final ResourceLocation HIGHEST = new ResourceLocation(GunMod.MOD_ID, "event_highest_priority");
-    public static final ResourceLocation HIGH = new ResourceLocation(GunMod.MOD_ID, "event_high_priority");
-    public static final ResourceLocation LOW = new ResourceLocation(GunMod.MOD_ID, "event_low_priority");
-    public static final ResourceLocation LOWEST = new ResourceLocation(GunMod.MOD_ID, "event_lowest_priority");
+    public static final Identifier HIGHEST = Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "event_highest_priority");
+    public static final Identifier HIGH = Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "event_high_priority");
+    public static final Identifier LOW = Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "event_low_priority");
+    public static final Identifier LOWEST = Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "event_lowest_priority");
 
     @Nullable
     private static WeakReference<MinecraftServer> server;
@@ -65,7 +65,7 @@ public class TaCZFabric implements ModInitializer {
         GunMod.setup();
         CommandRegistry.onServerStaring();
         CompatRegistry.onEnqueue();
-        ArgumentTypeRegistry.registerArgumentType(new ResourceLocation(GunMod.MOD_ID, "enum_argument"), EnumArgument.class,
+        ArgumentTypeRegistry.registerArgumentType(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "enum_argument"), EnumArgument.class,
                 new EnumArgument.Info());
         if (FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER) {
             CommonLoadPack.loadGunPack();

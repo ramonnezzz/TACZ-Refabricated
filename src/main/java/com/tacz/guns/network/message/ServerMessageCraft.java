@@ -10,10 +10,10 @@ import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class ServerMessageCraft implements FabricPacket {
-    public static final PacketType<ServerMessageCraft> TYPE = PacketType.create(new ResourceLocation(GunMod.MOD_ID, "s2c_craft"), ServerMessageCraft::new);
+    public static final PacketType<ServerMessageCraft> TYPE = PacketType.create(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "s2c_craft"), ServerMessageCraft::new);
 
     private final int menuId;
 

@@ -22,7 +22,7 @@ import com.tacz.guns.compat.ar.ARCompat;
 import com.tacz.guns.util.RenderHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
@@ -192,7 +192,7 @@ public class BedrockGunModel extends BedrockAnimatedModel {
     private static boolean checkShowMuzzle(BedrockPart bedrockPart, ItemStack attachmentItem) {
         IAttachment iAttachment = IAttachment.getIAttachmentOrNull(attachmentItem);
         if (iAttachment != null) {
-            ResourceLocation attachmentId = iAttachment.getAttachmentId(attachmentItem);
+            Identifier attachmentId = iAttachment.getAttachmentId(attachmentItem);
             var attachmentIndex = TimelessAPI.getClientAttachmentIndex(attachmentId);
             if (attachmentIndex.isPresent()) {
                 bedrockPart.visible = attachmentIndex.get().isShowMuzzle();

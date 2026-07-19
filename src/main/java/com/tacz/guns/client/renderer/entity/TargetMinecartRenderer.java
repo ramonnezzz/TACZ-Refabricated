@@ -19,7 +19,7 @@ import net.minecraft.client.renderer.entity.MinecartRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.core.UUIDUtil;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -40,7 +40,7 @@ public class TargetMinecartRenderer extends MinecartRenderer<TargetMinecart> {
     }
 
     @Override
-    public ResourceLocation getTextureLocation(TargetMinecart minecart) {
+    public Identifier getTextureLocation(TargetMinecart minecart) {
         return InternalAssetLoader.ENTITY_EMPTY_TEXTURE;
     }
 
@@ -64,7 +64,7 @@ public class TargetMinecartRenderer extends MinecartRenderer<TargetMinecart> {
                 Minecraft minecraft = Minecraft.getInstance();
                 GameProfile gameProfile = targetMinecart.getGameProfile();
                 var map = minecraft.getSkinManager().getInsecureSkinInformation(gameProfile);
-                ResourceLocation skin;
+                Identifier skin;
                 if (map.containsKey(MinecraftProfileTexture.Type.SKIN)) {
                     skin = minecraft.getSkinManager().registerTexture(map.get(MinecraftProfileTexture.Type.SKIN), MinecraftProfileTexture.Type.SKIN);
                 } else {

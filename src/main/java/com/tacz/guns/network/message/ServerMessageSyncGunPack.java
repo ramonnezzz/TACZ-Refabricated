@@ -12,21 +12,21 @@ import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.Map;
 
 public class ServerMessageSyncGunPack implements FabricPacket {
-    public static final PacketType<ServerMessageSyncGunPack> TYPE = PacketType.create(new ResourceLocation(GunMod.MOD_ID, "s2c_sync_gunpack"), ServerMessageSyncGunPack::new);
+    public static final PacketType<ServerMessageSyncGunPack> TYPE = PacketType.create(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "s2c_sync_gunpack"), ServerMessageSyncGunPack::new);
 
-    private final Map<DataType, Map<ResourceLocation, String>> cache;
+    private final Map<DataType, Map<Identifier, String>> cache;
 
     public ServerMessageSyncGunPack(FriendlyByteBuf buf) {
         this(buf.readMap(buf1 -> buf1.readEnum(DataType.class),
                 buf2 -> buf2.readMap(FriendlyByteBuf::readResourceLocation, FriendlyByteBuf::readUtf)));
     }
 
-    public ServerMessageSyncGunPack(Map<DataType, Map<ResourceLocation, String>> cache) {
+    public ServerMessageSyncGunPack(Map<DataType, Map<Identifier, String>> cache) {
         this.cache = cache;
     }
 
@@ -48,7 +48,7 @@ public class ServerMessageSyncGunPack implements FabricPacket {
     }
 
 
-    public Map<DataType, Map<ResourceLocation, String>> getCache() {
+    public Map<DataType, Map<Identifier, String>> getCache() {
         return cache;
     }
 

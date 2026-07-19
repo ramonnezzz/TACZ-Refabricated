@@ -45,7 +45,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
@@ -86,9 +86,9 @@ public class EntityKineticBullet extends Projectile implements IEntityAdditional
             .dimensions(EntityDimensions.scalable(0.0625F, 0.0625F))
             .trackRangeChunks(5).trackedUpdateRate(5)
             .forceTrackedVelocityUpdates(false).build();
-    public static final TagKey<EntityType<?>> USE_MAGIC_DAMAGE_ON = TagKey.create(Registries.ENTITY_TYPE, new ResourceLocation("tacz:use_magic_damage_on"));
-    public static final TagKey<EntityType<?>> USE_VOID_DAMAGE_ON = TagKey.create(Registries.ENTITY_TYPE, new ResourceLocation("tacz:use_void_damage_on"));
-    public static final TagKey<EntityType<?>> PRETEND_MELEE_DAMAGE_ON = TagKey.create(Registries.ENTITY_TYPE, new ResourceLocation("tacz:pretend_melee_damage_on"));
+    public static final TagKey<EntityType<?>> USE_MAGIC_DAMAGE_ON = TagKey.create(Registries.ENTITY_TYPE, Identifier.parse("tacz:use_magic_damage_on"));
+    public static final TagKey<EntityType<?>> USE_VOID_DAMAGE_ON = TagKey.create(Registries.ENTITY_TYPE, Identifier.parse("tacz:use_void_damage_on"));
+    public static final TagKey<EntityType<?>> PRETEND_MELEE_DAMAGE_ON = TagKey.create(Registries.ENTITY_TYPE, Identifier.parse("tacz:pretend_melee_damage_on"));
 
     /**
      * 允许其他 mod 使用 persistent data（永久数据） 控制曳光弹的颜色和粗细。<p>
@@ -111,7 +111,7 @@ public class EntityKineticBullet extends Projectile implements IEntityAdditional
 
     private static final ExplosionData DEFAULT_EXPLOSION_DATA = new ExplosionData(false, 0, 0, false, 30, false);
 
-    private ResourceLocation ammoId = DefaultAssets.EMPTY_AMMO_ID;
+    private Identifier ammoId = DefaultAssets.EMPTY_AMMO_ID;
     private int life = 200;
     @Deprecated
     private float speed = 1;
@@ -141,9 +141,9 @@ public class EntityKineticBullet extends Projectile implements IEntityAdditional
     private float cameraYRot;
     private Vector3f firstPersonRenderOffset;
     // 发射的枪械 ID
-    private ResourceLocation gunId = DefaultAssets.EMPTY_GUN_ID;
+    private Identifier gunId = DefaultAssets.EMPTY_GUN_ID;
     // 枪械display ID
-    private ResourceLocation gunDisplayId = DefaultAssets.DEFAULT_GUN_DISPLAY_ID;
+    private Identifier gunDisplayId = DefaultAssets.DEFAULT_GUN_DISPLAY_ID;
     private float armorIgnore;
     private float headShot;
     private float shotDamageMultiplier = 1f;
@@ -157,17 +157,17 @@ public class EntityKineticBullet extends Projectile implements IEntityAdditional
         this.setPos(x, y, z);
     }
 
-    public EntityKineticBullet(Level worldIn, LivingEntity throwerIn, ItemStack gunItem, ResourceLocation ammoId, ResourceLocation gunId,
-                               ResourceLocation gunDisplayId, boolean isTracerAmmo, GunData gunData, BulletData bulletData) {
+    public EntityKineticBullet(Level worldIn, LivingEntity throwerIn, ItemStack gunItem, Identifier ammoId, Identifier gunId,
+                               Identifier gunDisplayId, boolean isTracerAmmo, GunData gunData, BulletData bulletData) {
         this(TYPE, worldIn, throwerIn, gunItem, ammoId, gunId, gunDisplayId, isTracerAmmo, gunData, bulletData);
     }
 
-    public EntityKineticBullet(Level worldIn, LivingEntity throwerIn, ItemStack gunItem, ResourceLocation ammoId, ResourceLocation gunId, boolean isTracerAmmo, GunData gunData, BulletData bulletData) {
+    public EntityKineticBullet(Level worldIn, LivingEntity throwerIn, ItemStack gunItem, Identifier ammoId, Identifier gunId, boolean isTracerAmmo, GunData gunData, BulletData bulletData) {
         this(TYPE, worldIn, throwerIn, gunItem, ammoId, gunId, DefaultAssets.DEFAULT_GUN_DISPLAY_ID, isTracerAmmo, gunData, bulletData);
     }
 
     protected EntityKineticBullet(EntityType<? extends Projectile> type, Level worldIn, LivingEntity throwerIn, ItemStack gunItem,
-                                  ResourceLocation ammoId, ResourceLocation gunId, ResourceLocation gunDisplayId,
+                                  Identifier ammoId, Identifier gunId, Identifier gunDisplayId,
                                   boolean isTracerAmmo, GunData gunData, BulletData bulletData) {
         this(type, throwerIn.getX(), throwerIn.getEyeY() - (double) 0.1F, throwerIn.getZ(), worldIn);
         this.setOwner(throwerIn);
@@ -649,15 +649,15 @@ public class EntityKineticBullet extends Projectile implements IEntityAdditional
         this.gunDisplayId = additionalData.readResourceLocation();
     }
 
-    public ResourceLocation getAmmoId() {
+    public Identifier getAmmoId() {
         return ammoId;
     }
 
-    public ResourceLocation getGunId() {
+    public Identifier getGunId() {
         return gunId;
     }
 
-    public ResourceLocation getGunDisplayId() {
+    public Identifier getGunDisplayId() {
         return gunDisplayId;
     }
 

@@ -15,7 +15,7 @@ import dev.latvian.mods.kubejs.event.EventJS;
 import dev.latvian.mods.kubejs.script.ScriptType;
 import dev.latvian.mods.kubejs.script.ScriptTypeHolder;
 import dev.latvian.mods.rhino.util.HideFromJS;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 
 import javax.annotation.Nonnull;
@@ -44,7 +44,7 @@ public class GunKubeJSEvents {
         ;
 
         @Nullable
-        public ResourceLocation getEventSubId() {
+        public Identifier getEventSubId() {
             ItemStack itemStack = getEventItemStack();
             return itemStack.getItem() instanceof IGun iGun ? iGun.getGunId(itemStack) : null;
         }
@@ -84,7 +84,7 @@ public class GunKubeJSEvents {
         }
 
         @Override
-        public ResourceLocation getEventSubId() {
+        public Identifier getEventSubId() {
             return event.getGunId();
         }
 
@@ -101,7 +101,7 @@ public class GunKubeJSEvents {
         }
 
         @Override
-        public ResourceLocation getEventSubId() {
+        public Identifier getEventSubId() {
             return event.getGunId();
         }
 
@@ -118,7 +118,7 @@ public class GunKubeJSEvents {
         }
 
         @Override
-        public ResourceLocation getEventSubId() {
+        public Identifier getEventSubId() {
             return event.getGunId();
         }
 
@@ -262,7 +262,7 @@ public class GunKubeJSEvents {
 
         @Override
         @Nullable
-        public ResourceLocation getEventSubId() {
+        public Identifier getEventSubId() {
             return event.getAmmo().getGunId();
         }
     }

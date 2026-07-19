@@ -6,7 +6,7 @@ import net.fabricmc.fabric.api.networking.v1.FabricPacket;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.minecraft.network.Connection;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Consumer;
@@ -21,6 +21,6 @@ public interface IHandshakeMessage extends FabricPacket {
 
         void handle(PacketSender sender);
 
-        ResourceLocation getId();
+        Identifier getId();
     }
 }

@@ -12,12 +12,12 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
 public class ServerMessageGunDraw implements FabricPacket {
-    public static final PacketType<ServerMessageGunDraw> TYPE = PacketType.create(new ResourceLocation(GunMod.MOD_ID, "s2c_gundraw"), ServerMessageGunDraw::new);
+    public static final PacketType<ServerMessageGunDraw> TYPE = PacketType.create(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "s2c_gundraw"), ServerMessageGunDraw::new);
 
     private final int entityId;
     private final ItemStack previousGunItem;

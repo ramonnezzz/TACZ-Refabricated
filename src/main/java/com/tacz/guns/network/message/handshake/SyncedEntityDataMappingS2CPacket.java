@@ -10,7 +10,7 @@ import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.network.Connection;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
@@ -19,9 +19,9 @@ import java.util.*;
 import java.util.function.Consumer;
 
 public class SyncedEntityDataMappingS2CPacket implements IHandshakeMessage {
-    public static final PacketType<SyncedEntityDataMappingS2CPacket> TYPE = PacketType.create(new ResourceLocation("tacz", "synced_entity_data_mapping"), SyncedEntityDataMappingS2CPacket::new);
+    public static final PacketType<SyncedEntityDataMappingS2CPacket> TYPE = PacketType.create(Identifier.fromNamespaceAndPath("tacz", "synced_entity_data_mapping"), SyncedEntityDataMappingS2CPacket::new);
     private static final Marker HANDSHAKE = MarkerFactory.getMarker("TACZ_HANDSHAKE");
-    private Map<ResourceLocation, List<Pair<ResourceLocation, Integer>>> keyMap;
+    private Map<Identifier, List<Pair<Identifier, Integer>>> keyMap;
 
     public SyncedEntityDataMappingS2CPacket() {
 
@@ -32,8 +32,8 @@ public class SyncedEntityDataMappingS2CPacket implements IHandshakeMessage {
         this.keyMap = new HashMap<>();
 
         for (int i = 0; i < size; ++i) {
-            ResourceLocation classId = buf.readResourceLocation();
-            ResourceLocation keyId = buf.readResourceLocation();
+            Identifier classId = buf.readResourceLocation();
+            Identifier keyId = buf.readResourceLocation();
             int id = buf.readVarInt();
             this.keyMap.computeIfAbsent(classId, (k) -> new ArrayList<>()).add(Pair.of(keyId, id));
         }

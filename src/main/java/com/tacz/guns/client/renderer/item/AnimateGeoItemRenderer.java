@@ -24,7 +24,7 @@ import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -56,7 +56,7 @@ public abstract class AnimateGeoItemRenderer<M extends BedrockAnimatedModel, CTX
         this.renderByItem(stack, mode, matrices, vertexConsumers, light, overlay);
     }
 
-    public ResourceLocation textureLocation;
+    public Identifier textureLocation;
 
     public AnimateGeoItemRenderer() {
         super(Minecraft.getInstance().getBlockEntityRenderDispatcher(), Minecraft.getInstance().getEntityModels());
@@ -75,7 +75,7 @@ public abstract class AnimateGeoItemRenderer<M extends BedrockAnimatedModel, CTX
         return stateMachine;
     }
 
-    public ResourceLocation getTextureLocation(ItemStack stack) {
+    public Identifier getTextureLocation(ItemStack stack) {
         return textureLocation;
     }
 

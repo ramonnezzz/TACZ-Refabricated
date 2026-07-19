@@ -10,7 +10,7 @@ import net.minecraft.advancements.critereon.NbtPredicate;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -76,13 +76,13 @@ public class PartialNBTIngredient implements CustomIngredient {
         return Serializer.INSTANCE;
     }
 
-    public static final ResourceLocation ID = new ResourceLocation("forge", "partial_nbt");
+    public static final Identifier ID = Identifier.fromNamespaceAndPath("forge", "partial_nbt");
 
     public static class Serializer implements CustomIngredientSerializer<PartialNBTIngredient> {
         public static final Serializer INSTANCE = new Serializer();
 
         @Override
-        public ResourceLocation getIdentifier() {
+        public Identifier getIdentifier() {
             return ID;
         }
 

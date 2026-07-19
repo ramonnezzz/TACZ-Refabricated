@@ -28,7 +28,7 @@ import com.tacz.guns.sound.SoundManager;
 import com.tacz.guns.util.AttachmentDataUtils;
 import com.tacz.guns.util.CycleTaskHelper;
 import it.unimi.dsi.fastutil.Pair;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
@@ -57,9 +57,9 @@ public class ModernKineticGunScriptAPI {
 
     private CommonGunIndex gunIndex;
 
-    private ResourceLocation gunId;
+    private Identifier gunId;
 
-    private ResourceLocation gunDisplayId;
+    private Identifier gunDisplayId;
 
     private Supplier<Float> pitchSupplier;
 
@@ -181,7 +181,7 @@ public class ModernKineticGunScriptAPI {
                 float yaw = yawSupplier != null ? yawSupplier.get() : shooter.getYRot();
                 // 生成子弹
                 Level world = shooter.level();
-                ResourceLocation ammoId = gunData.getAmmoId();
+                Identifier ammoId = gunData.getAmmoId();
                 for (int i = 0; i < bulletAmount; i++) {
                     boolean isTracer = bulletData.hasTracerAmmo() && gunOperator.nextBulletIsTracer(bulletData.getTracerCountInterval());
                     EntityKineticBullet bullet = new EntityKineticBullet(world, shooter, itemStack, ammoId, gunId,

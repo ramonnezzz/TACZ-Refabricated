@@ -10,14 +10,14 @@ import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class ServerMessageSound implements FabricPacket {
-    public static final PacketType<ServerMessageSound> TYPE = PacketType.create(new ResourceLocation(GunMod.MOD_ID, "s2c_sound"), ServerMessageSound::new);
+    public static final PacketType<ServerMessageSound> TYPE = PacketType.create(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "s2c_sound"), ServerMessageSound::new);
 
     private final int entityId;
-    private final ResourceLocation gunId;
-    private final ResourceLocation gunDisplayId;
+    private final Identifier gunId;
+    private final Identifier gunDisplayId;
     private final String soundName;
     private final float volume;
     private final float pitch;
@@ -27,7 +27,7 @@ public class ServerMessageSound implements FabricPacket {
         this(buf.readVarInt(), buf.readResourceLocation(), buf.readResourceLocation(), buf.readUtf(), buf.readFloat(), buf.readFloat(), buf.readInt());
     }
 
-    public ServerMessageSound(int entityId, ResourceLocation gunId, ResourceLocation gunDisplayId, String soundName, float volume, float pitch, int distance) {
+    public ServerMessageSound(int entityId, Identifier gunId, Identifier gunDisplayId, String soundName, float volume, float pitch, int distance) {
         this.entityId = entityId;
         this.gunId = gunId;
         this.gunDisplayId = gunDisplayId;
@@ -37,7 +37,7 @@ public class ServerMessageSound implements FabricPacket {
         this.distance = distance;
     }
 
-    public ServerMessageSound(int entityId, ResourceLocation gunId, String soundName, float volume, float pitch, int distance) {
+    public ServerMessageSound(int entityId, Identifier gunId, String soundName, float volume, float pitch, int distance) {
         this(entityId, gunId, DefaultAssets.DEFAULT_GUN_DISPLAY_ID, soundName, volume, pitch, distance);
     }
 
@@ -66,11 +66,11 @@ public class ServerMessageSound implements FabricPacket {
         return entityId;
     }
 
-    public ResourceLocation getGunId() {
+    public Identifier getGunId() {
         return gunId;
     }
 
-    public ResourceLocation getGunDisplayId() {
+    public Identifier getGunDisplayId() {
         return gunDisplayId;
     }
 

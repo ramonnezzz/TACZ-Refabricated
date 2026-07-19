@@ -6,7 +6,7 @@ import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.fabricmc.fabric.api.networking.v1.ServerLoginConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerLoginNetworking;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.InvocationTargetException;
@@ -17,7 +17,7 @@ import java.util.Map;
 
 public class HandshakeNetworking {
     private static final List<PacketInfo<? extends IHandshakeMessage>> HANDSHAKE_PACKETS = new ArrayList<>();
-    private static final Map<ResourceLocation, Class<? extends IHandshakeMessage.IResponsePacket>> RES_PACKETS = new HashMap<>();
+    private static final Map<Identifier, Class<? extends IHandshakeMessage.IResponsePacket>> RES_PACKETS = new HashMap<>();
 
     public static void init() {
         ServerLoginConnectionEvents.QUERY_START.register((handler, server, sender, synchronizer) -> {
@@ -35,7 +35,7 @@ public class HandshakeNetworking {
         });
     }
 
-    public static <T extends IHandshakeMessage.IResponsePacket> void register(@NotNull ResourceLocation id, @NotNull Class<T> resPacketClass) {
+    public static <T extends IHandshakeMessage.IResponsePacket> void register(@NotNull Identifier id, @NotNull Class<T> resPacketClass) {
         RES_PACKETS.put(id, resPacketClass);
     }
 
@@ -45,7 +45,7 @@ public class HandshakeNetworking {
             if (understood) {
                 try {
                     if (buf.readableBytes() > 0) {
-                        ResourceLocation packetId = buf.readResourceLocation();
+                        Identifier packetId = buf.readResourceLocation();
                         Class<? extends IHandshakeMessage.IResponsePacket> ackPacketClass = RES_PACKETS.get(packetId);
                         if (ackPacketClass == null) {
                             GunMod.LOGGER.error("{} Is the handshake response packet registered?", packetId.toString());

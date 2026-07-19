@@ -12,20 +12,20 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 
 import javax.annotation.Nullable;
 
 public class ServerMessageGunHurt implements FabricPacket {
-    public static final PacketType<ServerMessageGunHurt> TYPE = PacketType.create(new ResourceLocation(GunMod.MOD_ID, "s2c_gunhurt"), ServerMessageGunHurt::new);
+    public static final PacketType<ServerMessageGunHurt> TYPE = PacketType.create(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "s2c_gunhurt"), ServerMessageGunHurt::new);
 
     private final int bulletId;
     private final int hurtEntityId;
     private final int attackerId;
-    private final ResourceLocation gunId;
-    private final ResourceLocation gunDisplayId;
+    private final Identifier gunId;
+    private final Identifier gunDisplayId;
     private final float amount;
     private final boolean isHeadShot;
     private final float headshotMultiplier;
@@ -38,7 +38,7 @@ public class ServerMessageGunHurt implements FabricPacket {
         );
     }
 
-    public ServerMessageGunHurt(int bulletId, int hurtEntityId, int attackerId, ResourceLocation gunId, ResourceLocation gunDisplayId,
+    public ServerMessageGunHurt(int bulletId, int hurtEntityId, int attackerId, Identifier gunId, Identifier gunDisplayId,
                                 float amount, boolean isHeadShot, float headshotMultiplier) {
         this.bulletId = bulletId;
         this.hurtEntityId = hurtEntityId;
