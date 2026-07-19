@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.11-SNAPSHOT'
+    id 'net.fabricmc.fabric-loom' version '1.17.12'
     id 'maven-publish'
 }
 
@@ -120,29 +120,24 @@ repositories {
 dependencies {
     // To change the versions see the gradle.properties file
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    //mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-    mappings loom.layered() {
-        officialMojangMappings()
-        parchment("org.parchmentmc.data:parchment-${project.parchment_minecraft_version}:${project.parchment_mappings_version}@zip")
-    }
-    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-    modCompileOnly 'com.google.code.findbugs:jsr305:3.0.2'
+    compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
     annotationProcessor 'com.google.code.findbugs:jsr305:3.0.2'
 
-    modImplementation(include("libs:simplebedrockmodel-fabric:2.3.0.1+mc1.20.1"))
+    // TRAVADO em mc1.20.1 (lib local em /libs) — comentado até termos build 26.2
+    // modImplementation(include("libs:simplebedrockmodel-fabric:2.3.0.1+mc1.20.1"))
+
     implementation("com.maydaymemory:mae:1.1.1") {
         exclude group: 'com.google.code.findbugs', module: 'jsr305'
         exclude group: 'it.unimi.dsi', module: 'fastutil'
         exclude group: 'org.joml', module: 'joml'
     }
 
-    // Apache Commons Math 库，用于进行一些插值运算
+    // Libs Java puras, sem dependência de versão do MC — devem seguir funcionando
     implementation(include('org.apache.commons:commons-math3:3.6.1'))
-
-    // LuaJ 库，将 lua 脚本语言引入用于控制枪械的逻辑和动画状态机
     implementation(include('com.github.FiguraMC.luaj:luaj-core:3.0.8-figura')) {
         exclude group: 'org.apache.commons', module: 'commons-lang3'
     }
@@ -153,67 +148,57 @@ dependencies {
         exclude group: 'org.apache.commons', module: 'commons-lang3'
     }
 
-    // compile against the JEI API but do not include it at runtime
-    modCompileOnly("mezz.jei:jei-1.20.1-common-api:${jei_version}")
-    modCompileOnly("mezz.jei:jei-1.20.1-fabric-api:${jei_version}")
-    // at runtime, use the full JEI jar for Fabric
-    modRuntimeOnly("mezz.jei:jei-1.20.1-fabric:15.20.0.104")
-    // 性能分析工具模组
-    modRuntimeOnly "curse.maven:spark-361579:4738953"
-    // 假人，测试近战伤害
-    modRuntimeOnly "curse.maven:selene-499980:6902843"
-    modRuntimeOnly "curse.maven:mmmmmmmmmmmm-225738:6826546"
-    // 手柄按键支持
-    modCompileOnly "curse.maven:framework-549225:6531429"
-    modCompileOnly("curse.maven:controllable-317269:6171420")
+    // ===== A PARTIR DAQUI: tudo comentado até confirmarmos build 26.2 de cada um =====
 
-    // 越肩视角，用来兼容第三人称准星
-    modImplementation "curse.maven:shoulder-surfing-reloaded-243190:6784146"
+    compileOnly("mezz.jei:jei-26.2-common-api:30.12.0.72")
+    compileOnly("mezz.jei:jei-26.2-fabric-api:30.12.0.72")
+    runtimeOnly("mezz.jei:jei-26.2-fabric:30.12.0.72")
 
-    modImplementation "me.shedaniel.cloth:cloth-config-fabric:${cloth_config_fabric}"
+    // modRuntimeOnly "curse.maven:spark-361579:4738953"
+    // modRuntimeOnly "curse.maven:selene-499980:6902843"
+    // modRuntimeOnly "curse.maven:mmmmmmmmmmmm-225738:6826546"
+    // modCompileOnly "curse.maven:framework-549225:6531429"
+    // modCompileOnly("curse.maven:controllable-317269:6171420")
+    // modImplementation "curse.maven:shoulder-surfing-reloaded-243190:6784146"
 
-    modCompileOnly "curse.maven:embeddium-908741:${embeddedt_id}"
-    // 同时兼容两个版本
-    modCompileOnly 'libs:iris_legacy:mc1.20.1-1.6.17'
-    modCompileOnly 'libs:iris:1.7.0+mc1.20.1'
+    implementation("me.shedaniel.cloth:cloth-config-fabric:${cloth_config_fabric}") {
+        exclude(group: "net.fabricmc.fabric-api")
+    }
 
-    modCompileOnly "curse.maven:carry-on-274259:${carry_on_id}"
+    // modCompileOnly "curse.maven:embeddium-908741:${embeddedt_id}"
+    compileOnly "maven.modrinth:YL57xq9U:oaD6KQls" // Iris 1.11.2+26.2-fabric
 
-    modImplementation "dev.kosmx.player-anim:player-animation-lib-fabric:${player_animation_lib}"
+    // modCompileOnly "curse.maven:carry-on-274259:${carry_on_id}"
 
-    // kubejs开发环境引入
-    modCompileOnly "dev.latvian.mods:kubejs-fabric:${kubejs_version}"
-    modCompileOnly "dev.latvian.mods:rhino-fabric:${rhino_version}"
-    modCompileOnly "dev.architectury:architectury-fabric:${architectury_version}"
+    // modImplementation "dev.kosmx.player-anim:player-animation-lib-fabric:${player_animation_lib}"
 
-    // CCA
-    modImplementation(include("dev.onyxstudios.cardinal-components-api:cardinal-components-base:5.2.3"))
-    modImplementation(include("dev.onyxstudios.cardinal-components-api:cardinal-components-entity:5.2.3"))
+    // modCompileOnly "dev.latvian.mods:kubejs-fabric:${kubejs_version}"
+    // modCompileOnly "dev.latvian.mods:rhino-fabric:${rhino_version}"
+    // modCompileOnly "dev.architectury:architectury-fabric:${architectury_version}"
 
-    // MKB
-    modImplementation(include("maven.modrinth:modernkeybinding:1.20.X-1.2.0"))
+    // CCA — não tem sufixo de versão do MC no coordinate, mas mexe com registries/Mixins
+    // internos que provavelmente quebraram entre 1.20.1 e 26.2. Comentado por segurança.
+    // modImplementation(include("dev.onyxstudios.cardinal-components-api:cardinal-components-base:5.2.3"))
+    // modImplementation(include("dev.onyxstudios.cardinal-components-api:cardinal-components-entity:5.2.3"))
 
-    // Forge Config API Port
-    modApi "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:8.0.2"
+    // MKB — TRAVADO em "1.20.X" no nome do artifact
+    // modImplementation(include("maven.modrinth:modernkeybinding:1.20.X-1.2.0"))
 
-    // ModMenu
-    modImplementation("com.terraformersmc:modmenu:7.2.2")
+    modImplementation "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:8.0.2"
 
-    // Zoomify
-    modCompileOnly "maven.modrinth:zoomify:2.14.5+1.20.1"
+    implementation("com.terraformersmc:modmenu:20.0.1")
 
-    modCompileOnly "maven.modrinth:immediatelyfast:1.5.1+1.20.4-fabric"
+    // modCompileOnly "maven.modrinth:zoomify:2.14.5+1.20.1"
+    compileOnly "maven.modrinth:5ZwdcRci:Z3V4Ooz5" // ImmediatelyFast 1.16.2+26.2-fabric
 
-    modRuntimeOnly "maven.modrinth:tweakeroo:0.17.1"
-    modRuntimeOnly "maven.modrinth:malilib:0.16.3"
+    // modRuntimeOnly "maven.modrinth:tweakeroo:0.17.1"
+    // modRuntimeOnly "maven.modrinth:malilib:0.16.3"
 
-    // REI
-    modRuntimeOnly "me.shedaniel:RoughlyEnoughItems-fabric:$rei_version"
-    modCompileOnly "me.shedaniel:RoughlyEnoughItems-api-fabric:$rei_version"
-    modCompileOnly "me.shedaniel:RoughlyEnoughItems-default-plugin-fabric:$rei_version"
+    runtimeOnly "me.shedaniel:RoughlyEnoughItems-fabric:26.2.820"
+    compileOnly "me.shedaniel:RoughlyEnoughItems-api-fabric:26.2.820"
+    compileOnly "me.shedaniel:RoughlyEnoughItems-default-plugin-fabric:26.2.820"
 
-    // 加速渲染
-    modImplementation "maven.modrinth:accrelatedrendering-refabricated:1.0.8-1.20.1-alpha-fabric.1"
+    // modImplementation "maven.modrinth:accrelatedrendering-refabricated:1.0.8-1.20.1-alpha-fabric.1"
 }
 
 processResources {
@@ -229,7 +214,7 @@ processResources {
     }
 }
 
-def targetJavaVersion = 17
+def targetJavaVersion = 25
 tasks.withType(JavaCompile).configureEach {
     it.options.encoding = "UTF-8"
     if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
