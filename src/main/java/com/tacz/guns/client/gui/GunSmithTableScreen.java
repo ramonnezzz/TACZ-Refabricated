@@ -124,7 +124,7 @@ public class GunSmithTableScreen extends AbstractContainerScreen<GunSmithTableMe
 
         if (Minecraft.getInstance().level != null) {
             RecipeManager recipeManager = Minecraft.getInstance().level.getRecipeManager();
-            List<GunSmithTableRecipe> recipeList = recipeManager.getAllRecipesFor(ModRecipe.GUN_SMITH_TABLE_CRAFTING);
+            List<GunSmithTableRecipe> recipeList = ModRecipe.getAllGunSmithTableRecipes(recipeManager);
             Set<String> namespaces = filterList != null ? filterList.namespaceList() : null;
             for (GunSmithTableRecipe recipe : recipeList) {
                 Identifier id = recipe.getId();

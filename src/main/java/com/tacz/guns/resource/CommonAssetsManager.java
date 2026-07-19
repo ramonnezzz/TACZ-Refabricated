@@ -249,7 +249,7 @@ public class CommonAssetsManager implements ICommonResourceProvider {
     public static void onReload(RegistryAccess registries, boolean client) {
         if (!client) {
             if (getInstance() != null && getInstance().recipeManager != null) {
-                List<GunSmithTableRecipe> recipes = getInstance().recipeManager.getAllRecipesFor(ModRecipe.GUN_SMITH_TABLE_CRAFTING);
+                List<GunSmithTableRecipe> recipes = ModRecipe.getAllGunSmithTableRecipes(getInstance().recipeManager);
                 for (GunSmithTableRecipe recipe : recipes) {
                     recipe.init();
                 }

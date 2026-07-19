@@ -11,7 +11,9 @@ import com.tacz.guns.resource.filter.RecipeFilter;
 import com.tacz.guns.resource.index.CommonBlockIndex;
 import it.unimi.dsi.fastutil.ints.Int2IntArrayMap;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
@@ -20,6 +22,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.Level;
 
@@ -64,8 +67,11 @@ public class GunSmithTableMenu extends AbstractContainerMenu {
             }
         }
 
-        Recipe<?> recipe = recipeManager.byKey(recipeId).orElse(null);
+        ResourceKey<Recipe<?>> recipeKey = ResourceKey.create(Registries.RECIPE, recipeId);
+        RecipeHolder<?> holder = recipeManager.byKey(recipeKey).orElse(null);
+        Recipe<?> recipe = holder == null ? null : holder.value();
         if (recipe instanceof GunSmithTableRecipe gunSmithTableRecipe) {
+            gunSmithTableRecipe = gunSmithTableRecipe.withId(recipeId);
             boolean flag = TimelessAPI.getCommonBlockIndex(getBlockId()).map(blockIndex -> {
                 return blockIndex.getData().getTabs().stream().noneMatch(tab -> tab.id().equals(gunSmithTableRecipe.getTab()));
             }).orElse(true);
@@ -125,7 +131,7 @@ public class GunSmithTableMenu extends AbstractContainerMenu {
             // 给玩家对应的物品
             Level level = player.level();
             if (!level.isClientSide) {
-                ItemEntity itemEntity = new ItemEntity(level, player.getX(), player.getY() + 0.5, player.getZ(), recipe.getResultItem(player.level().registryAccess()).copy());
+                ItemEntity itemEntity = new ItemEntity(level, player.getX(), player.getY() + 0.5, player.getZ(), recipe.getOutput().copy());
                 itemEntity.setPickUpDelay(0);
                 level.addFreshEntity(itemEntity);
             }

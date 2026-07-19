@@ -53,7 +53,7 @@ public class GunModPlugin implements IModPlugin {
     public void registerRecipes(IRecipeRegistration registration) {
         if (Minecraft.getInstance().level == null) return;
         RecipeManager recipeManager = Minecraft.getInstance().level.getRecipeManager();
-        List<GunSmithTableRecipe> recipes = recipeManager.getAllRecipesFor(ModRecipe.GUN_SMITH_TABLE_CRAFTING);
+        List<GunSmithTableRecipe> recipes = ModRecipe.getAllGunSmithTableRecipes(recipeManager);
 
         for (var entry : recipeTypeMap.entrySet()) {
             TimelessAPI.getCommonBlockIndex(entry.getKey()).ifPresent(blockIndex -> {

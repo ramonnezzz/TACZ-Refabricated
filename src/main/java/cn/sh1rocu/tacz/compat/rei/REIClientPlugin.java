@@ -50,7 +50,7 @@ public class REIClientPlugin implements me.shedaniel.rei.api.client.plugins.REIC
     public void registerDisplays(DisplayRegistry registry) {
         if (Minecraft.getInstance().level == null) return;
         RecipeManager recipeManager = Minecraft.getInstance().level.getRecipeManager();
-        List<GunSmithTableRecipe> recipes = recipeManager.getAllRecipesFor(ModRecipe.GUN_SMITH_TABLE_CRAFTING);
+        List<GunSmithTableRecipe> recipes = ModRecipe.getAllGunSmithTableRecipes(recipeManager);
 
         for (var entry : displays.entrySet()) {
             TimelessAPI.getCommonBlockIndex(entry.getKey()).ifPresent(blockIndex -> {
