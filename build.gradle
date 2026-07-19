@@ -1,5 +1,11 @@
 plugins {
-    id 'net.fabricmc.fabric-loom-remap' version '1.17.12'
+    // O client.jar/server.jar da 26.2 já vem sem ofuscação (Mojang não publica mappings pra essa
+    // versão porque não há nada pra mapear). Por isso NÃO usamos o id '...-remap': ele força a
+    // declarar uma dependência 'mappings' que não existe pra 26.2. O id puro liga automaticamente
+    // o modo loom.disableObfuscation, que pula toda a pipeline de remapeamento — e, junto com
+    // isso, as configurações mod* (modImplementation etc.) deixam de existir, então dependências
+    // que antes eram "mod" viram implementation/compileOnly/runtimeOnly normais (ver abaixo).
+    id 'net.fabricmc.fabric-loom' version '1.17.12'
     id 'maven-publish'
 }
 
@@ -120,8 +126,6 @@ repositories {
 dependencies {
     // To change the versions see the gradle.properties file
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    // parchment removido por enquanto (ver gradle.properties) — só mapeamento oficial da Mojang
-    mappings loom.officialMojangMappings()
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
@@ -186,7 +190,8 @@ dependencies {
     // MKB — TRAVADO em "1.20.X" no nome do artifact
     // modImplementation(include("maven.modrinth:modernkeybinding:1.20.X-1.2.0"))
 
-    modImplementation "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:8.0.2"
+    // Sem ofuscação em 26.2 (ver comentário acima), não há infraestrutura mod* — usa implementation normal
+    implementation "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:8.0.2"
 
     implementation("com.terraformersmc:modmenu:20.0.1")
 
