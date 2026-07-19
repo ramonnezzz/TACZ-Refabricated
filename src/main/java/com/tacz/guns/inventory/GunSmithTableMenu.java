@@ -28,7 +28,7 @@ import java.util.List;
 
 public class GunSmithTableMenu extends AbstractContainerMenu {
     public static final MenuType<GunSmithTableMenu> TYPE = new ExtendedScreenHandlerType<>((windowId, inv, data) -> {
-        Identifier blockId = data.readResourceLocation();
+        Identifier blockId = data.readIdentifier();
         return new GunSmithTableMenu(windowId, inv, blockId);
     });
 

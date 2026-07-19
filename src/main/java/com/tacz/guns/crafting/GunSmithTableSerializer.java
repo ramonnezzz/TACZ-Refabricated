@@ -37,7 +37,7 @@ public class GunSmithTableSerializer implements RecipeSerializer<GunSmithTableRe
             ingredients.add(new GunSmithTableIngredient(Ingredient.fromNetwork(buffer), buffer.readInt()));
         }
         ItemStack resultItem = buffer.readItem();
-        Identifier group = buffer.readResourceLocation();
+        Identifier group = buffer.readIdentifier();
         GunSmithTableResult result = new GunSmithTableResult(resultItem, group);
         return new GunSmithTableRecipe(recipeId, result, ingredients);
     }
@@ -50,6 +50,6 @@ public class GunSmithTableSerializer implements RecipeSerializer<GunSmithTableRe
             buffer.writeInt(ingredient.getCount());
         }
         buffer.writeItem(recipe.getResult().getResult());
-        buffer.writeResourceLocation(recipe.getResult().getGroup());
+        buffer.writeIdentifier(recipe.getResult().getGroup());
     }
 }

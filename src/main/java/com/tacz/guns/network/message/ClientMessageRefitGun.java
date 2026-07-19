@@ -6,17 +6,18 @@ import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.api.item.attachment.AttachmentType;
 import com.tacz.guns.network.NetworkHandler;
 import com.tacz.guns.resource.modifier.AttachmentPropertyManager;
-import net.fabricmc.fabric.api.networking.v1.FabricPacket;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
-import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 
-public class ClientMessageRefitGun implements FabricPacket {
-    public static final PacketType<ClientMessageRefitGun> TYPE = PacketType.create(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "c2s_player_refit"), ClientMessageRefitGun::new);
+public class ClientMessageRefitGun implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<ClientMessageRefitGun> TYPE = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "c2s_player_refit"));
+    public static final StreamCodec<FriendlyByteBuf, ClientMessageRefitGun> STREAM_CODEC = CustomPacketPayload.codec(ClientMessageRefitGun::write, ClientMessageRefitGun::new);
 
     private final int attachmentSlotIndex;
     private final int gunSlotIndex;
@@ -32,15 +33,14 @@ public class ClientMessageRefitGun implements FabricPacket {
         this.attachmentType = attachmentType;
     }
 
-    @Override
-    public void write(FriendlyByteBuf buf) {
+        public void write(FriendlyByteBuf buf) {
         buf.writeInt(attachmentSlotIndex);
         buf.writeInt(gunSlotIndex);
         buf.writeEnum(attachmentType);
     }
 
     @Override
-    public PacketType<?> getType() {
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 

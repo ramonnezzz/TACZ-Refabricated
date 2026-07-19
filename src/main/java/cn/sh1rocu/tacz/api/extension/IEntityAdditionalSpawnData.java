@@ -1,10 +1,14 @@
 package cn.sh1rocu.tacz.api.extension;
 
 import com.tacz.guns.GunMod;
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.fabricmc.fabric.api.networking.v1.FriendlyByteBufs;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.common.ClientCommonPacketListener;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundBundlePacket;
@@ -15,8 +19,6 @@ import java.util.List;
 
 // Porting_Lib
 public interface IEntityAdditionalSpawnData {
-    Identifier EXTRA_DATA_PACKET = Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "extra_entity_spawn_data");
-
     void readSpawnData(FriendlyByteBuf buf);
 
     void writeSpawnData(FriendlyByteBuf buf);
@@ -27,12 +29,27 @@ public interface IEntityAdditionalSpawnData {
 
     static Packet<ClientGamePacketListener> getEntitySpawningPacket(Entity entity, Packet<ClientGamePacketListener> base) {
         if (entity instanceof IEntityAdditionalSpawnData extra) {
-            FriendlyByteBuf buf = PacketByteBufs.create();
-            buf.writeVarInt(entity.getId());
+            FriendlyByteBuf buf = FriendlyByteBufs.create();
             extra.writeSpawnData(buf);
-            Packet<ClientGamePacketListener> extraPacket = ServerPlayNetworking.createS2CPacket(IEntityAdditionalSpawnData.EXTRA_DATA_PACKET, buf);
-            return new ClientboundBundlePacket(List.of(base, extraPacket));
+            byte[] data = new byte[buf.readableBytes()];
+            buf.readBytes(data);
+            Packet<ClientCommonPacketListener> extraPacket = ServerPlayNetworking.createClientboundPacket(new ExtraSpawnDataPayload(entity.getId(), data));
+            return new ClientboundBundlePacket(List.<Packet<? super ClientGamePacketListener>>of(base, extraPacket));
         }
         return base;
+    }
+
+    record ExtraSpawnDataPayload(int entityId, byte[] data) implements CustomPacketPayload {
+        public static final CustomPacketPayload.Type<ExtraSpawnDataPayload> TYPE = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "extra_entity_spawn_data"));
+        public static final StreamCodec<FriendlyByteBuf, ExtraSpawnDataPayload> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, ExtraSpawnDataPayload::entityId,
+                ByteBufCodecs.BYTE_ARRAY, ExtraSpawnDataPayload::data,
+                ExtraSpawnDataPayload::new
+        );
+
+        @Override
+        public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
     }
 }

@@ -5,19 +5,20 @@ import com.tacz.guns.GunMod;
 import com.tacz.guns.api.event.common.GunShootEvent;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.networking.v1.FabricPacket;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
-import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
-public class ServerMessageGunShoot implements FabricPacket {
-    public static final PacketType<ServerMessageGunShoot> TYPE = PacketType.create(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "s2c_gun_shoot"), ServerMessageGunShoot::new);
+public class ServerMessageGunShoot implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<ServerMessageGunShoot> TYPE = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "s2c_gun_shoot"));
+    public static final StreamCodec<FriendlyByteBuf, ServerMessageGunShoot> STREAM_CODEC = CustomPacketPayload.codec(ServerMessageGunShoot::write, ServerMessageGunShoot::new);
 
     private final int shooterId;
     private final ItemStack gunItemStack;
@@ -31,14 +32,13 @@ public class ServerMessageGunShoot implements FabricPacket {
         this.gunItemStack = gunItemStack;
     }
 
-    @Override
-    public void write(FriendlyByteBuf buf) {
+        public void write(FriendlyByteBuf buf) {
         buf.writeVarInt(shooterId);
         buf.writeItem(gunItemStack);
     }
 
     @Override
-    public PacketType<?> getType() {
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 

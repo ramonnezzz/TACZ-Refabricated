@@ -310,12 +310,12 @@ public class Serializers {
     public static final IDataSerializer<Identifier> RESOURCE_LOCATION = new IDataSerializer<>() {
         @Override
         public void write(FriendlyByteBuf buf, Identifier value) {
-            buf.writeResourceLocation(value);
+            buf.writeIdentifier(value);
         }
 
         @Override
         public Identifier read(FriendlyByteBuf buf) {
-            return buf.readResourceLocation();
+            return buf.readIdentifier();
         }
 
         @Override

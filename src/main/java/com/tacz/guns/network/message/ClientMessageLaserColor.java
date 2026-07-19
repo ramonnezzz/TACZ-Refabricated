@@ -4,10 +4,10 @@ import com.tacz.guns.GunMod;
 import com.tacz.guns.api.item.IAttachment;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.api.item.attachment.AttachmentType;
-import net.fabricmc.fabric.api.networking.v1.FabricPacket;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
-import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
@@ -17,8 +17,9 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ClientMessageLaserColor implements FabricPacket {
-    public static final PacketType<ClientMessageLaserColor> TYPE = PacketType.create(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "c2s_laser_color"), ClientMessageLaserColor::new);
+public class ClientMessageLaserColor implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<ClientMessageLaserColor> TYPE = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "c2s_laser_color"));
+    public static final StreamCodec<FriendlyByteBuf, ClientMessageLaserColor> STREAM_CODEC = CustomPacketPayload.codec(ClientMessageLaserColor::write, ClientMessageLaserColor::new);
 
     private final Map<AttachmentType, Integer> colorMap = new HashMap<>();
     private boolean applyGunColor = false;
@@ -55,8 +56,7 @@ public class ClientMessageLaserColor implements FabricPacket {
         }
     }
 
-    @Override
-    public void write(FriendlyByteBuf buf) {
+        public void write(FriendlyByteBuf buf) {
         buf.writeMap(colorMap, FriendlyByteBuf::writeEnum, FriendlyByteBuf::writeInt);
         buf.writeBoolean(applyGunColor);
         buf.writeInt(gunColor);
@@ -64,7 +64,7 @@ public class ClientMessageLaserColor implements FabricPacket {
     }
 
     @Override
-    public PacketType<?> getType() {
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 

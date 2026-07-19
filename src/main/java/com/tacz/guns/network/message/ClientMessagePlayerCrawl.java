@@ -3,15 +3,16 @@ package com.tacz.guns.network.message;
 import com.tacz.guns.GunMod;
 import com.tacz.guns.api.entity.IGunOperator;
 import com.tacz.guns.config.sync.SyncConfig;
-import net.fabricmc.fabric.api.networking.v1.FabricPacket;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
-import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 
-public class ClientMessagePlayerCrawl implements FabricPacket {
-    public static final PacketType<ClientMessagePlayerCrawl> TYPE = PacketType.create(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "c2s_player_crawl"), ClientMessagePlayerCrawl::new);
+public class ClientMessagePlayerCrawl implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<ClientMessagePlayerCrawl> TYPE = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "c2s_player_crawl"));
+    public static final StreamCodec<FriendlyByteBuf, ClientMessagePlayerCrawl> STREAM_CODEC = CustomPacketPayload.codec(ClientMessagePlayerCrawl::write, ClientMessagePlayerCrawl::new);
 
     private final boolean isCrawl;
 
@@ -23,13 +24,12 @@ public class ClientMessagePlayerCrawl implements FabricPacket {
         this.isCrawl = buf.readBoolean();
     }
 
-    @Override
-    public void write(FriendlyByteBuf buf) {
+        public void write(FriendlyByteBuf buf) {
         buf.writeBoolean(isCrawl);
     }
 
     @Override
-    public PacketType<?> getType() {
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 

@@ -608,7 +608,7 @@ public class EntityKineticBullet extends Projectile implements IEntityAdditional
         buffer.writeDouble(getDeltaMovement().z);
         Entity entity = getOwner();
         buffer.writeInt(entity != null ? entity.getId() : 0);
-        buffer.writeResourceLocation(ammoId);
+        buffer.writeIdentifier(ammoId);
         buffer.writeFloat(this.gravity);
         buffer.writeBoolean(this.explosion);
         buffer.writeBoolean(this.igniteEntity);
@@ -620,8 +620,8 @@ public class EntityKineticBullet extends Projectile implements IEntityAdditional
         buffer.writeFloat(this.friction);
         buffer.writeInt(this.pierce);
         buffer.writeBoolean(this.isTracerAmmo);
-        buffer.writeResourceLocation(this.gunId);
-        buffer.writeResourceLocation(this.gunDisplayId);
+        buffer.writeIdentifier(this.gunId);
+        buffer.writeIdentifier(this.gunDisplayId);
     }
 
     @Override
@@ -633,7 +633,7 @@ public class EntityKineticBullet extends Projectile implements IEntityAdditional
         if (entity != null) {
             this.setOwner(entity);
         }
-        this.ammoId = additionalData.readResourceLocation();
+        this.ammoId = additionalData.readIdentifier();
         this.gravity = additionalData.readFloat();
         this.explosion = additionalData.readBoolean();
         this.igniteEntity = additionalData.readBoolean();
@@ -645,8 +645,8 @@ public class EntityKineticBullet extends Projectile implements IEntityAdditional
         this.friction = additionalData.readFloat();
         this.pierce = additionalData.readInt();
         this.isTracerAmmo = additionalData.readBoolean();
-        this.gunId = additionalData.readResourceLocation();
-        this.gunDisplayId = additionalData.readResourceLocation();
+        this.gunId = additionalData.readIdentifier();
+        this.gunDisplayId = additionalData.readIdentifier();
     }
 
     public Identifier getAmmoId() {

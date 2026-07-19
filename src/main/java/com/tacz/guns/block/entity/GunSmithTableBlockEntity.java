@@ -69,7 +69,7 @@ public class GunSmithTableBlockEntity extends BlockEntity implements ExtendedScr
     @Override
     public void writeScreenOpeningData(ServerPlayer serverPlayer, FriendlyByteBuf buf) {
         Identifier rl = this.getId() == null ? DefaultAssets.DEFAULT_BLOCK_ID : this.getId();
-        buf.writeResourceLocation(rl);
+        buf.writeIdentifier(rl);
     }
 
     @Nullable

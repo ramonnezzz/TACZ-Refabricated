@@ -7,37 +7,37 @@ import com.tacz.guns.resource.network.CommonNetworkCache;
 import com.tacz.guns.resource.network.DataType;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.networking.v1.FabricPacket;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
-import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 
 import java.util.Map;
 
-public class ServerMessageSyncGunPack implements FabricPacket {
-    public static final PacketType<ServerMessageSyncGunPack> TYPE = PacketType.create(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "s2c_sync_gunpack"), ServerMessageSyncGunPack::new);
+public class ServerMessageSyncGunPack implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<ServerMessageSyncGunPack> TYPE = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "s2c_sync_gunpack"));
+    public static final StreamCodec<FriendlyByteBuf, ServerMessageSyncGunPack> STREAM_CODEC = CustomPacketPayload.codec(ServerMessageSyncGunPack::write, ServerMessageSyncGunPack::new);
 
     private final Map<DataType, Map<Identifier, String>> cache;
 
     public ServerMessageSyncGunPack(FriendlyByteBuf buf) {
         this(buf.readMap(buf1 -> buf1.readEnum(DataType.class),
-                buf2 -> buf2.readMap(FriendlyByteBuf::readResourceLocation, FriendlyByteBuf::readUtf)));
+                buf2 -> buf2.readMap(FriendlyByteBuf::readIdentifier, FriendlyByteBuf::readUtf)));
     }
 
     public ServerMessageSyncGunPack(Map<DataType, Map<Identifier, String>> cache) {
         this.cache = cache;
     }
 
-    @Override
-    public void write(FriendlyByteBuf buf) {
+        public void write(FriendlyByteBuf buf) {
         buf.writeMap(getCache(), FriendlyByteBuf::writeEnum, (buf1, map) ->
-                buf1.writeMap(map, FriendlyByteBuf::writeResourceLocation, FriendlyByteBuf::writeUtf));
+                buf1.writeMap(map, FriendlyByteBuf::writeIdentifier, FriendlyByteBuf::writeUtf));
     }
 
     @Override
-    public PacketType<?> getType() {
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 

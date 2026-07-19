@@ -72,7 +72,7 @@ public abstract class IngredientMixin {
         int index = buf.readerIndex();
         try {
             if (buf.readUtf().equals("tacz_ingredient")) {
-                Identifier id = buf.readResourceLocation();
+                Identifier id = buf.readIdentifier();
                 CustomIngredientSerializer<?> serializer = null;
 
                 if (id.equals(StrictNBTIngredient.ID)) serializer = StrictNBTIngredient.Serializer.INSTANCE;
@@ -104,7 +104,7 @@ public abstract class IngredientMixin {
 
                 if (serializer != null) {
                     buffer.writeUtf("tacz_ingredient");
-                    buffer.writeResourceLocation(id);
+                    buffer.writeIdentifier(id);
                     serializer.write(buffer, serializer.read(obj));
                     ci.cancel();
                 }

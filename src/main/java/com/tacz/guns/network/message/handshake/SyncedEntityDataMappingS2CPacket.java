@@ -4,12 +4,12 @@ import com.tacz.guns.GunMod;
 import com.tacz.guns.entity.sync.core.SyncedDataKey;
 import com.tacz.guns.entity.sync.core.SyncedEntityData;
 import com.tacz.guns.network.IHandshakeMessage;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
-import net.fabricmc.fabric.api.networking.v1.PacketType;
+import io.netty.channel.ChannelFutureListener;
 import net.minecraft.network.Connection;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Marker;
@@ -19,7 +19,8 @@ import java.util.*;
 import java.util.function.Consumer;
 
 public class SyncedEntityDataMappingS2CPacket implements IHandshakeMessage {
-    public static final PacketType<SyncedEntityDataMappingS2CPacket> TYPE = PacketType.create(Identifier.fromNamespaceAndPath("tacz", "synced_entity_data_mapping"), SyncedEntityDataMappingS2CPacket::new);
+    public static final CustomPacketPayload.Type<SyncedEntityDataMappingS2CPacket> TYPE = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath("tacz", "synced_entity_data_mapping"));
+    public static final StreamCodec<FriendlyByteBuf, SyncedEntityDataMappingS2CPacket> STREAM_CODEC = CustomPacketPayload.codec(SyncedEntityDataMappingS2CPacket::write, SyncedEntityDataMappingS2CPacket::new);
     private static final Marker HANDSHAKE = MarkerFactory.getMarker("TACZ_HANDSHAKE");
     private Map<Identifier, List<Pair<Identifier, Integer>>> keyMap;
 
@@ -32,8 +33,8 @@ public class SyncedEntityDataMappingS2CPacket implements IHandshakeMessage {
         this.keyMap = new HashMap<>();
 
         for (int i = 0; i < size; ++i) {
-            Identifier classId = buf.readResourceLocation();
-            Identifier keyId = buf.readResourceLocation();
+            Identifier classId = buf.readIdentifier();
+            Identifier keyId = buf.readIdentifier();
             int id = buf.readVarInt();
             this.keyMap.computeIfAbsent(classId, (k) -> new ArrayList<>()).add(Pair.of(keyId, id));
         }
@@ -45,13 +46,13 @@ public class SyncedEntityDataMappingS2CPacket implements IHandshakeMessage {
         buf.writeInt(keys.size());
         keys.forEach((key) -> {
             int id = SyncedEntityData.instance().getInternalId(key);
-            buf.writeResourceLocation(key.classKey().id());
-            buf.writeResourceLocation(key.id());
+            buf.writeIdentifier(key.classKey().id());
+            buf.writeIdentifier(key.id());
             buf.writeVarInt(id);
         });
     }
 
-    public IHandshakeMessage.IResponsePacket handle(Connection connection, Consumer<GenericFutureListener<? extends Future<? super Void>>> listenerAdder) {
+    public IHandshakeMessage.IResponsePacket handle(Connection connection, Consumer<ChannelFutureListener> listenerAdder) {
         GunMod.LOGGER.debug(HANDSHAKE, "Received synced key mappings from server");
         if (!SyncedEntityData.instance().updateMappings(this.keyMap)) {
             connection.disconnect(Component.literal("Connection closed - [TacZ] Received unknown synced data keys."));
@@ -60,7 +61,8 @@ public class SyncedEntityDataMappingS2CPacket implements IHandshakeMessage {
         return new AcknowledgeC2SPacket();
     }
 
-    public PacketType<?> getType() {
+    @Override
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 }

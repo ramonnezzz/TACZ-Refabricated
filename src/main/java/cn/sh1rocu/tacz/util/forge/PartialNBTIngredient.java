@@ -126,7 +126,7 @@ public class PartialNBTIngredient implements CustomIngredient {
 
         @Override
         public PartialNBTIngredient read(FriendlyByteBuf buffer) {
-            Set<Item> items = Stream.generate(() -> BuiltInRegistries.ITEM.get(buffer.readResourceLocation())).limit(buffer.readVarInt()).collect(Collectors.toSet());
+            Set<Item> items = Stream.generate(() -> BuiltInRegistries.ITEM.get(buffer.readIdentifier())).limit(buffer.readVarInt()).collect(Collectors.toSet());
             CompoundTag nbt = buffer.readNbt();
             return new PartialNBTIngredient(items, Objects.requireNonNull(nbt));
         }
@@ -135,7 +135,7 @@ public class PartialNBTIngredient implements CustomIngredient {
         public void write(FriendlyByteBuf buffer, PartialNBTIngredient ingredient) {
             buffer.writeVarInt(ingredient.items.size());
             for (Item item : ingredient.items)
-                buffer.writeResourceLocation(BuiltInRegistries.ITEM.getKey(item));
+                buffer.writeIdentifier(BuiltInRegistries.ITEM.getKey(item));
             buffer.writeNbt(ingredient.nbt);
         }
     }

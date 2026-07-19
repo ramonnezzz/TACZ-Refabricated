@@ -2,10 +2,12 @@ package com.tacz.guns.network;
 
 import com.tacz.guns.GunMod;
 import net.fabricmc.api.EnvType;
-import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.fabricmc.fabric.api.networking.v1.ServerLoginConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerLoginNetworking;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.NotNull;
 
@@ -28,7 +30,7 @@ public class HandshakeNetworking {
                     sender.sendPacket(packet);
                 } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException |
                          InstantiationException e) {
-                    GunMod.LOGGER.error("{} Handshake packet processing error", packetInfo.type.getId().toString(), e);
+                    GunMod.LOGGER.error("{} Handshake packet processing error", packetInfo.type.id().toString(), e);
                 }
             }
 
@@ -39,13 +41,13 @@ public class HandshakeNetworking {
         RES_PACKETS.put(id, resPacketClass);
     }
 
-    public static <T extends IHandshakeMessage> void register(@NotNull PacketType<T> type, @NotNull Class<T> packetClass) {
-        HANDSHAKE_PACKETS.add(new PacketInfo<>(type, packetClass));
-        ServerLoginNetworking.registerGlobalReceiver(type.getId(), (server, handler, understood, buf, synchronizer, responseSender) -> {
+    public static <T extends IHandshakeMessage> void register(@NotNull CustomPacketPayload.Type<T> type, @NotNull StreamCodec<FriendlyByteBuf, T> codec, @NotNull Class<T> packetClass) {
+        HANDSHAKE_PACKETS.add(new PacketInfo<>(type, codec, packetClass));
+        ServerLoginNetworking.registerGlobalReceiver(type.id(), (server, handler, understood, buf, synchronizer, responseSender) -> {
             if (understood) {
                 try {
                     if (buf.readableBytes() > 0) {
-                        Identifier packetId = buf.readResourceLocation();
+                        Identifier packetId = buf.readIdentifier();
                         Class<? extends IHandshakeMessage.IResponsePacket> ackPacketClass = RES_PACKETS.get(packetId);
                         if (ackPacketClass == null) {
                             GunMod.LOGGER.error("{} Is the handshake response packet registered?", packetId.toString());
@@ -58,23 +60,16 @@ public class HandshakeNetworking {
                     }
                 } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException |
                          InstantiationException e) {
-                    GunMod.LOGGER.error("Handshake response packet processing error in {}", type.getId().toString(), e);
+                    GunMod.LOGGER.error("Handshake response packet processing error in {}", type.id().toString(), e);
                 }
 
             }
         });
         if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
-            NetworkHandler.registerHandshake(type);
+            NetworkHandler.registerHandshake(type, codec);
         }
     }
 
-    public record PacketInfo<T extends IHandshakeMessage>(PacketType<T> type, Class<T> packetClass) {
-        public PacketType<T> type() {
-            return this.type;
-        }
-
-        public Class<T> packetClass() {
-            return this.packetClass;
-        }
+    public record PacketInfo<T extends IHandshakeMessage>(CustomPacketPayload.Type<T> type, StreamCodec<FriendlyByteBuf, T> codec, Class<T> packetClass) {
     }
 }

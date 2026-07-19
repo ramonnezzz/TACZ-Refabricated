@@ -5,15 +5,16 @@ import com.tacz.guns.api.DefaultAssets;
 import com.tacz.guns.client.sound.SoundPlayManager;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.networking.v1.FabricPacket;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
-import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 
-public class ServerMessageSound implements FabricPacket {
-    public static final PacketType<ServerMessageSound> TYPE = PacketType.create(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "s2c_sound"), ServerMessageSound::new);
+public class ServerMessageSound implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<ServerMessageSound> TYPE = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "s2c_sound"));
+    public static final StreamCodec<FriendlyByteBuf, ServerMessageSound> STREAM_CODEC = CustomPacketPayload.codec(ServerMessageSound::write, ServerMessageSound::new);
 
     private final int entityId;
     private final Identifier gunId;
@@ -24,7 +25,7 @@ public class ServerMessageSound implements FabricPacket {
     private final int distance;
 
     public ServerMessageSound(FriendlyByteBuf buf) {
-        this(buf.readVarInt(), buf.readResourceLocation(), buf.readResourceLocation(), buf.readUtf(), buf.readFloat(), buf.readFloat(), buf.readInt());
+        this(buf.readVarInt(), buf.readIdentifier(), buf.readIdentifier(), buf.readUtf(), buf.readFloat(), buf.readFloat(), buf.readInt());
     }
 
     public ServerMessageSound(int entityId, Identifier gunId, Identifier gunDisplayId, String soundName, float volume, float pitch, int distance) {
@@ -41,11 +42,10 @@ public class ServerMessageSound implements FabricPacket {
         this(entityId, gunId, DefaultAssets.DEFAULT_GUN_DISPLAY_ID, soundName, volume, pitch, distance);
     }
 
-    @Override
-    public void write(FriendlyByteBuf buf) {
+        public void write(FriendlyByteBuf buf) {
         buf.writeVarInt(entityId);
-        buf.writeResourceLocation(gunId);
-        buf.writeResourceLocation(gunDisplayId);
+        buf.writeIdentifier(gunId);
+        buf.writeIdentifier(gunDisplayId);
         buf.writeUtf(soundName);
         buf.writeFloat(volume);
         buf.writeFloat(pitch);
@@ -53,7 +53,7 @@ public class ServerMessageSound implements FabricPacket {
     }
 
     @Override
-    public PacketType<?> getType() {
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 

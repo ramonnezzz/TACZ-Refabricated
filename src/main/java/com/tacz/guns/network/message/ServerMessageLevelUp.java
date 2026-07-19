@@ -3,18 +3,19 @@ package com.tacz.guns.network.message;
 import com.tacz.guns.GunMod;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.networking.v1.FabricPacket;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
-import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
-public class ServerMessageLevelUp implements FabricPacket {
-    public static final PacketType<ServerMessageLevelUp> TYPE = PacketType.create(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "s2c_levelup"), ServerMessageLevelUp::new);
+public class ServerMessageLevelUp implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<ServerMessageLevelUp> TYPE = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "s2c_levelup"));
+    public static final StreamCodec<FriendlyByteBuf, ServerMessageLevelUp> STREAM_CODEC = CustomPacketPayload.codec(ServerMessageLevelUp::write, ServerMessageLevelUp::new);
 
     private final ItemStack gun;
     private final int level;
@@ -28,14 +29,13 @@ public class ServerMessageLevelUp implements FabricPacket {
         this.level = level;
     }
 
-    @Override
-    public void write(FriendlyByteBuf buf) {
+        public void write(FriendlyByteBuf buf) {
         buf.writeItem(gun);
         buf.writeInt(level);
     }
 
     @Override
-    public PacketType<?> getType() {
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 

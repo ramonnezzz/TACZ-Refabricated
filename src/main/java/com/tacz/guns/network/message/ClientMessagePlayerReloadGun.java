@@ -2,15 +2,16 @@ package com.tacz.guns.network.message;
 
 import com.tacz.guns.GunMod;
 import com.tacz.guns.api.entity.IGunOperator;
-import net.fabricmc.fabric.api.networking.v1.FabricPacket;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
-import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 
-public class ClientMessagePlayerReloadGun implements FabricPacket {
-    public static final PacketType<ClientMessagePlayerReloadGun> TYPE = PacketType.create(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "c2s_player_reload"), ClientMessagePlayerReloadGun::new);
+public class ClientMessagePlayerReloadGun implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<ClientMessagePlayerReloadGun> TYPE = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "c2s_player_reload"));
+    public static final StreamCodec<FriendlyByteBuf, ClientMessagePlayerReloadGun> STREAM_CODEC = CustomPacketPayload.codec(ClientMessagePlayerReloadGun::write, ClientMessagePlayerReloadGun::new);
 
     public ClientMessagePlayerReloadGun() {
 
@@ -20,13 +21,12 @@ public class ClientMessagePlayerReloadGun implements FabricPacket {
         this();
     }
 
-    @Override
-    public void write(FriendlyByteBuf buf) {
+        public void write(FriendlyByteBuf buf) {
 
     }
 
     @Override
-    public PacketType<?> getType() {
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 

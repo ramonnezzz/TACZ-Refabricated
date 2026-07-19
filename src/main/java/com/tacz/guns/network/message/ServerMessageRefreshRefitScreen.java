@@ -5,16 +5,17 @@ import com.tacz.guns.client.gui.GunRefitScreen;
 import com.tacz.guns.resource.modifier.AttachmentPropertyManager;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.networking.v1.FabricPacket;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
-import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 
-public class ServerMessageRefreshRefitScreen implements FabricPacket {
-    public static final PacketType<ServerMessageRefreshRefitScreen> TYPE = PacketType.create(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "s2c_refresh_refit_screen"), ServerMessageRefreshRefitScreen::new);
+public class ServerMessageRefreshRefitScreen implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<ServerMessageRefreshRefitScreen> TYPE = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "s2c_refresh_refit_screen"));
+    public static final StreamCodec<FriendlyByteBuf, ServerMessageRefreshRefitScreen> STREAM_CODEC = CustomPacketPayload.codec(ServerMessageRefreshRefitScreen::write, ServerMessageRefreshRefitScreen::new);
 
     public ServerMessageRefreshRefitScreen() {
 
@@ -24,13 +25,12 @@ public class ServerMessageRefreshRefitScreen implements FabricPacket {
         this();
     }
 
-    @Override
-    public void write(FriendlyByteBuf buf) {
+        public void write(FriendlyByteBuf buf) {
 
     }
 
     @Override
-    public PacketType<?> getType() {
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 
