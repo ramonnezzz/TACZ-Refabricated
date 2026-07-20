@@ -39,12 +39,13 @@ public abstract class AbstractHorseMixin extends Animal implements ItemHandlerCa
 
     @Override
     public LazyOptional<IItemHandler> tacz$getItemHandler(@Nullable Direction facing) {
-        return isAlive() && itemHandler != null ? itemHandler.cast() : ItemHandlerCapability.super.tacz$getItemHandler(facing);
+        // A interface agora chega via injected interface no LivingEntity, então Interface.super é
+        // ilegal aqui; o default era só LazyOptional.empty() / no-op — inlinado.
+        return isAlive() && itemHandler != null ? itemHandler.cast() : LazyOptional.empty();
     }
 
     @Override
     public void tacz$invalidateItemHandler() {
-        ItemHandlerCapability.super.tacz$invalidateItemHandler();
         if (this.itemHandler != null) {
             LazyOptional<?> oldHandler = this.itemHandler;
             this.itemHandler = null;

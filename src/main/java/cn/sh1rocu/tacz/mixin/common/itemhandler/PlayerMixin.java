@@ -69,6 +69,7 @@ public abstract class PlayerMixin extends LivingEntity implements ItemHandlerCap
             }
         }
 
-        return ItemHandlerCapability.super.tacz$getItemHandler(facing);
+        // Interface.super ficou ilegal com a interface injetada no LivingEntity; default era empty()
+        return LazyOptional.empty();
     }
 }
