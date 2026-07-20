@@ -18,23 +18,23 @@ public class RefitKey {
     public static final KeyMapping REFIT_KEY = new KeyMapping("key.tacz.refit.desc",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_Z,
-            "key.category.tacz");
+            com.tacz.guns.client.init.ClientSetupEvent.KEY_CATEGORY);
 
     public static void onRefitPress(InputEvent.Key event) {
-        if (event.getAction() == GLFW.GLFW_PRESS && REFIT_KEY.matches(event.getKey(), event.getScanCode())) {
+        if (event.getAction() == GLFW.GLFW_PRESS && REFIT_KEY.matches(new net.minecraft.client.input.KeyEvent(event.getKey(), event.getScanCode(), event.getModifiers()))) {
             LocalPlayer player = Minecraft.getInstance().player;
             if (player == null || player.isSpectator()) {
                 return;
             }
             if (isInGame()) {
-                if (IGun.mainHandHoldGun(player) && Minecraft.getInstance().screen == null) {
+                if (IGun.mainHandHoldGun(player) && Minecraft.getInstance().gui.screen() == null) {
                     IGun iGun = IGun.getIGunOrNull(player.getMainHandItem());
                     if (iGun != null && iGun.hasAttachmentLock(player.getMainHandItem())) {
                         return;
                     }
-                    Minecraft.getInstance().setScreen(new GunRefitScreen());
+                    Minecraft.getInstance().setScreenAndShow(new GunRefitScreen());
                 }
-            } else if (Minecraft.getInstance().screen instanceof GunRefitScreen refitScreen) {
+            } else if (Minecraft.getInstance().gui.screen() instanceof GunRefitScreen refitScreen) {
                 refitScreen.onClose();
             }
         }

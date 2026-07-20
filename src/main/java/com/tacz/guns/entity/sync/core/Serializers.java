@@ -1,10 +1,12 @@
 package com.tacz.guns.entity.sync.core;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.*;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.RegistryOps;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.UUID;
@@ -36,7 +38,7 @@ public class Serializers {
 
         @Override
         public Boolean read(Tag tag) {
-            return ((ByteTag) tag).getAsByte() != 0;
+            return ((ByteTag) tag).byteValue() != 0;
         }
     };
 
@@ -58,7 +60,7 @@ public class Serializers {
 
         @Override
         public Byte read(Tag tag) {
-            return ((ByteTag) tag).getAsByte();
+            return ((ByteTag) tag).byteValue();
         }
     };
 
@@ -80,7 +82,7 @@ public class Serializers {
 
         @Override
         public Short read(Tag tag) {
-            return ((ShortTag) tag).getAsShort();
+            return ((ShortTag) tag).shortValue();
         }
     };
 
@@ -102,7 +104,7 @@ public class Serializers {
 
         @Override
         public Integer read(Tag tag) {
-            return ((IntTag) tag).getAsInt();
+            return ((IntTag) tag).intValue();
         }
     };
 
@@ -124,7 +126,7 @@ public class Serializers {
 
         @Override
         public Long read(Tag tag) {
-            return ((LongTag) tag).getAsLong();
+            return ((LongTag) tag).longValue();
         }
     };
 
@@ -146,7 +148,7 @@ public class Serializers {
 
         @Override
         public Float read(Tag tag) {
-            return ((FloatTag) tag).getAsFloat();
+            return ((FloatTag) tag).floatValue();
         }
     };
 
@@ -168,7 +170,7 @@ public class Serializers {
 
         @Override
         public Double read(Tag tag) {
-            return ((DoubleTag) tag).getAsDouble();
+            return ((DoubleTag) tag).doubleValue();
         }
     };
 
@@ -190,7 +192,7 @@ public class Serializers {
 
         @Override
         public Character read(Tag tag) {
-            return (char) ((IntTag) tag).getAsInt();
+            return (char) ((IntTag) tag).intValue();
         }
     };
 
@@ -212,7 +214,7 @@ public class Serializers {
 
         @Override
         public String read(Tag tag) {
-            return tag.getAsString();
+            return tag.asString().orElse("");
         }
     };
 
@@ -256,7 +258,7 @@ public class Serializers {
 
         @Override
         public BlockPos read(Tag tag) {
-            return BlockPos.of(((LongTag) tag).getAsLong());
+            return BlockPos.of(((LongTag) tag).longValue());
         }
     };
 
@@ -282,9 +284,15 @@ public class Serializers {
         @Override
         public UUID read(Tag tag) {
             CompoundTag compound = (CompoundTag) tag;
-            return new UUID(compound.getLong("Most"), compound.getLong("Least"));
+            return new UUID(compound.getLongOr("Most", 0), compound.getLongOr("Least", 0));
         }
     };
+
+    // ItemStack.save(CompoundTag)/ItemStack.of(CompoundTag) saíram da API; a serialização de
+    // ItemStack agora é via codec (precisa de um RegistryOps). Sem um RegistryAccess real
+    // disponível neste ponto, usa RegistryAccess.EMPTY - funciona pros componentes desta mod
+    // (não dependem de registries dinâmicos), mas não é 100% correto para todo tipo de item.
+    private static final RegistryOps<Tag> ITEM_STACK_OPS = RegistryOps.create(NbtOps.INSTANCE, RegistryAccess.EMPTY);
 
     public static final IDataSerializer<ItemStack> ITEM_STACK = new IDataSerializer<>() {
         @Override
@@ -299,12 +307,12 @@ public class Serializers {
 
         @Override
         public Tag write(ItemStack value) {
-            return value.save(new CompoundTag());
+            return ItemStack.CODEC.encodeStart(ITEM_STACK_OPS, value).getOrThrow();
         }
 
         @Override
         public ItemStack read(Tag tag) {
-            return ItemStack.of((CompoundTag) tag);
+            return ItemStack.CODEC.parse(ITEM_STACK_OPS, tag).resultOrPartial().orElse(ItemStack.EMPTY);
         }
     };
 
@@ -326,7 +334,7 @@ public class Serializers {
 
         @Override
         public Identifier read(Tag tag) {
-            return Identifier.tryParse(tag.getAsString());
+            return Identifier.tryParse(tag.asString().orElse(""));
         }
     };
 }

@@ -1,20 +1,20 @@
 package com.tacz.guns.util.block;
 
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.tacz.guns.config.common.AmmoConfig;
 import com.tacz.guns.util.HitboxHelper;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.PrimedTnt;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.enchantment.ProtectionEnchantment;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.ExplosionDamageCalculator;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.material.FluidState;
@@ -24,12 +24,16 @@ import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import java.util.Set;
 
-public class ProjectileExplosion extends Explosion {
+// Explosion virou uma interface pura na 26.2 (a lógica concreta foi pra ServerExplosion, que não
+// dá pra estender do jeito que essa classe precisa - o algoritmo assimétrico de raio de explosão
+// aqui é totalmente próprio). Em vez de estender Explosion, agora implementa a interface direto e
+// mantém seu próprio estado (toBlow/hitPlayers/damageSource/mode), que antes vinha da superclasse.
+public class ProjectileExplosion implements Explosion {
     private static final ExplosionDamageCalculator DEFAULT_CONTEXT = new ExplosionDamageCalculator();
-    private final Level level;
+    private final ServerLevel level;
     private final double x;
     private final double y;
     private final double z;
@@ -38,10 +42,13 @@ public class ProjectileExplosion extends Explosion {
     private final boolean knockback;
     private final Entity owner;
     private final Entity exploder;
+    private final DamageSource damageSource;
     private final ExplosionDamageCalculator damageCalculator;
+    private final Explosion.BlockInteraction mode;
+    private final Set<BlockPos> toBlow = Sets.newHashSet();
+    private final Map<Player, Vec3> hitPlayers = Maps.newHashMap();
 
-    public ProjectileExplosion(Level level, Entity owner, Entity exploder, @Nullable DamageSource source, @Nullable ExplosionDamageCalculator damageCalculator, double x, double y, double z, float power, float radius, boolean knockback, Explosion.BlockInteraction mode) {
-        super(level, exploder, source, damageCalculator, x, y, z, radius, AmmoConfig.EXPLOSIVE_AMMO_FIRE.get(), mode);
+    public ProjectileExplosion(ServerLevel level, Entity owner, Entity exploder, @Nullable DamageSource source, @Nullable ExplosionDamageCalculator damageCalculator, double x, double y, double z, float power, float radius, boolean knockback, Explosion.BlockInteraction mode) {
         this.level = level;
         this.x = x;
         this.y = y;
@@ -50,11 +57,12 @@ public class ProjectileExplosion extends Explosion {
         this.radius = radius;
         this.owner = owner;
         this.exploder = exploder;
+        this.damageSource = source == null ? Explosion.getDefaultDamageSource(level, exploder) : source;
         this.damageCalculator = damageCalculator == null ? DEFAULT_CONTEXT : damageCalculator;
         this.knockback = knockback;
+        this.mode = mode;
     }
 
-    @Override
     public void explode() {
         this.level.gameEvent(this.exploder, GameEvent.EXPLODE, BlockPos.containing(this.x, this.y, this.z));
         Set<BlockPos> set = Sets.newHashSet();
@@ -71,7 +79,7 @@ public class ProjectileExplosion extends Explosion {
                         d0 /= d3;
                         d1 /= d3;
                         d2 /= d3;
-                        float f = this.radius * (0.7F + this.level.random.nextFloat() * 0.6F);
+                        float f = this.radius * (0.7F + this.level.getRandom().nextFloat() * 0.6F);
                         double blockX = this.x;
                         double blockY = this.y;
                         double blockZ = this.z;
@@ -84,7 +92,7 @@ public class ProjectileExplosion extends Explosion {
                                 break;
                             }
 
-                            Optional<Float> optional = this.damageCalculator.getBlockExplosionResistance(this, this.level, pos, blockState, fluidState);
+                            var optional = this.damageCalculator.getBlockExplosionResistance(this, this.level, pos, blockState, fluidState);
                             if (optional.isPresent()) {
                                 f -= (optional.get() + f1) * f1;
                             }
@@ -102,7 +110,7 @@ public class ProjectileExplosion extends Explosion {
             }
         }
 
-        this.getToBlow().addAll(set);
+        this.toBlow.addAll(set);
         float radius = this.radius;
         int minX = Mth.floor(this.x - (double) radius - 1.0D);
         int maxX = Mth.floor(this.x + (double) radius + 1.0D);
@@ -112,11 +120,10 @@ public class ProjectileExplosion extends Explosion {
         int maxZ = Mth.floor(this.z + (double) radius + 1.0D);
         radius *= 2;
         List<Entity> entities = this.level.getEntities(this.exploder, new AABB(minX, minY, minZ, maxX, maxY, maxZ));
-        // net.minecraftforge.event.ForgeEventFactory.onExplosionDetonate(this.level, this, entities, radius);
         Vec3 explosionPos = new Vec3(this.x, this.y, this.z);
 
         for (Entity entity : entities) {
-            if (entity.ignoreExplosion()) {
+            if (entity.ignoreExplosion(this)) {
                 continue;
             }
 
@@ -155,7 +162,9 @@ public class ProjectileExplosion extends Explosion {
                 d[13] = new Vec3(deltaX, deltaY, boundingBox.maxZ);
                 d[14] = new Vec3(deltaX, deltaY, deltaZ);
                 for (int s = 0; s < 15; s++) {
-                    result = BlockRayTrace.rayTraceBlocks(this.level, new ClipContext(explosionPos, d[s], ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null));
+                    // ClipContext tem dois construtores com 5 args (Entity vs CollisionContext) -
+                    // o null original era pra sobrecarga de Entity (sem entidade a ignorar)
+                    result = BlockRayTrace.rayTraceBlocks(this.level, new ClipContext(explosionPos, d[s], ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, (Entity) null));
                     minDistance = (result.getType() != BlockHitResult.Type.BLOCK) ? Math.min(minDistance, explosionPos.distanceTo(d[s])) : minDistance;
                 }
                 strength = minDistance * 2 / radius;
@@ -177,11 +186,13 @@ public class ProjectileExplosion extends Explosion {
             }
 
             double damage = 1.0D - strength;
-            entity.hurt(this.getDamageSource(), (float) damage * this.power);
+            entity.hurtServer(this.level, this.damageSource, (float) damage * this.power);
 
-            if (entity instanceof LivingEntity) {
-                damage = (float) ProtectionEnchantment.getExplosionKnockbackAfterDampener((LivingEntity) entity, damage);
-            }
+            // ProtectionEnchantment.getExplosionKnockbackAfterDampener sumiu - encantamentos
+            // viraram totalmente data-driven, sem mais essa classe helper por encantamento.
+            // EnchantmentHelper.modifyKnockback existe mas opera por ItemStack individual, não
+            // pela armadura inteira da entidade - a atenuação de recuo por proteção fica de fora
+            // por ora (esta explosão específica não respeita mais Protection).
 
             float multiplier = this.power * radius / 500;
             // 启用击退效果
@@ -189,10 +200,76 @@ public class ProjectileExplosion extends Explosion {
                 entity.setDeltaMovement(entity.getDeltaMovement().add(deltaX * damage * multiplier, deltaY * damage * multiplier, deltaZ * damage * multiplier));
                 if (entity instanceof Player player) {
                     if (!player.isSpectator() && (!player.isCreative() || !player.getAbilities().flying)) {
-                        this.getHitPlayers().put(player, new Vec3(deltaX * damage * multiplier, deltaY * damage * multiplier, deltaZ * damage * multiplier));
+                        this.hitPlayers.put(player, new Vec3(deltaX * damage * multiplier, deltaY * damage * multiplier, deltaZ * damage * multiplier));
                     }
                 }
             }
         }
+    }
+
+    // Substitui o antigo Explosion#finalizeExplosion (removido da interface) - versão mínima que
+    // só aplica a quebra de bloco de fato quando o modo não é KEEP, igual ao comportamento anterior.
+    public void finalizeExplosion(boolean spawnParticles) {
+        if (this.mode != Explosion.BlockInteraction.KEEP) {
+            for (BlockPos pos : this.toBlow) {
+                this.level.destroyBlock(pos, true, this.exploder);
+            }
+        }
+    }
+
+    public Set<BlockPos> getToBlow() {
+        return this.toBlow;
+    }
+
+    public void clearToBlow() {
+        this.toBlow.clear();
+    }
+
+    public Map<Player, Vec3> getHitPlayers() {
+        return this.hitPlayers;
+    }
+
+    public DamageSource getDamageSource() {
+        return this.damageSource;
+    }
+
+    @Override
+    public ServerLevel level() {
+        return this.level;
+    }
+
+    @Override
+    public Explosion.BlockInteraction getBlockInteraction() {
+        return this.mode;
+    }
+
+    @Override
+    public LivingEntity getIndirectSourceEntity() {
+        return Explosion.getIndirectSourceEntity(this.exploder);
+    }
+
+    @Override
+    public Entity getDirectSourceEntity() {
+        return this.exploder;
+    }
+
+    @Override
+    public float radius() {
+        return this.radius;
+    }
+
+    @Override
+    public Vec3 center() {
+        return new Vec3(this.x, this.y, this.z);
+    }
+
+    @Override
+    public boolean canTriggerBlocks() {
+        return this.mode != Explosion.BlockInteraction.KEEP;
+    }
+
+    @Override
+    public boolean shouldAffectBlocklikeEntities() {
+        return canTriggerBlocks();
     }
 }

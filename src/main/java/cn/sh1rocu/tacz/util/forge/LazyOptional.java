@@ -1,6 +1,5 @@
 package cn.sh1rocu.tacz.util.forge;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import org.apache.commons.lang3.mutable.Mutable;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.logging.log4j.Level;
@@ -16,7 +15,6 @@ import java.util.Optional;
 import java.util.Set;
 
 @ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class LazyOptional<T> {
     @FunctionalInterface
     public interface NonNullConsumer<T> {

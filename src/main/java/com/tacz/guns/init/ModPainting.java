@@ -1,20 +1,8 @@
 package com.tacz.guns.init;
 
-import com.tacz.guns.GunMod;
-import net.minecraft.core.Registry;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
-import net.minecraft.world.entity.decoration.PaintingVariant;
-
+// PaintingVariant virou um registry 100% orientado a datapack na 26.2 (sem registro via Java) -
+// a variante agora é definida em data/tacz/painting_variant/blood_strike_1.json
 public class ModPainting {
     public static void init() {
-
-    }
-
-    public static final PaintingVariant BLOOD_STRIKE_1 = register("blood_strike_1", new PaintingVariant(32, 32));
-//    public static final PaintingVariant BLOOD_STRIKE_2 = register("blood_strike_2",  new PaintingVariant(32, 32));
-
-    private static PaintingVariant register(String name, PaintingVariant painting) {
-        return Registry.register(BuiltInRegistries.PAINTING_VARIANT, Identifier.fromNamespaceAndPath(GunMod.MOD_ID, name), painting);
     }
 }

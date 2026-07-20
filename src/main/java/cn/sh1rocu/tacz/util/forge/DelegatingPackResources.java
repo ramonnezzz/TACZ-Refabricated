@@ -4,9 +4,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.AbstractPackResources;
+import net.minecraft.server.packs.PackLocationInfo;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackType;
-import net.minecraft.server.packs.metadata.MetadataSectionSerializer;
+import net.minecraft.server.packs.metadata.MetadataSectionType;
 import net.minecraft.server.packs.metadata.pack.PackMetadataSection;
 import net.minecraft.server.packs.resources.IoSupplier;
 import org.jetbrains.annotations.Nullable;
@@ -21,8 +22,8 @@ public class DelegatingPackResources extends AbstractPackResources {
     private final Map<String, List<PackResources>> namespacesAssets;
     private final Map<String, List<PackResources>> namespacesData;
 
-    public DelegatingPackResources(String packId, boolean isBuiltin, PackMetadataSection packMeta, List<? extends PackResources> packs) {
-        super(packId, isBuiltin);
+    public DelegatingPackResources(PackLocationInfo location, PackMetadataSection packMeta, List<? extends PackResources> packs) {
+        super(location);
         this.packMeta = packMeta;
         this.delegates = ImmutableList.copyOf(packs);
         this.namespacesAssets = this.buildNamespaceMap(PackType.CLIENT_RESOURCES, delegates);
@@ -43,8 +44,9 @@ public class DelegatingPackResources extends AbstractPackResources {
     @SuppressWarnings("unchecked")
     @Nullable
     @Override
-    public <T> T getMetadataSection(MetadataSectionSerializer<T> deserializer) throws IOException {
-        return deserializer.getMetadataSectionName().equals("pack") ? (T) this.packMeta : null;
+    public <T> T getMetadataSection(MetadataSectionType<T> type) throws IOException {
+        return (type == PackMetadataSection.CLIENT_TYPE || type == PackMetadataSection.SERVER_TYPE || type == PackMetadataSection.FALLBACK_TYPE)
+                ? (T) this.packMeta : null;
     }
 
     @Override

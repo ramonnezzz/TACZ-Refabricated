@@ -32,7 +32,8 @@ public class GunPackList extends ContainerObjectSelectionList<GunPackList.Entry>
 
     public GunPackList(Minecraft pMinecraft, int pWidth, int pHeight, int pY0, int pY1, int pItemHeight,
                        Map<Identifier, List<Identifier>> recipes, GunSmithTableScreen parent) {
-        super(pMinecraft, pWidth, pHeight, pY0, pY1, pItemHeight);
+        // ContainerObjectSelectionList perdeu o parâmetro y1 explícito (derivado de height agora)
+        super(pMinecraft, pWidth, pHeight, pY0, pItemHeight);
         this.parent = parent;
         Set<String> namespaces = new HashSet<>();
         for (List<Identifier> entry : recipes.values()) {
@@ -49,8 +50,8 @@ public class GunPackList extends ContainerObjectSelectionList<GunPackList.Entry>
 
         this.byHandCheckbox = new Checkbox(0, 0, 10, 10, Component.translatable("gui.tacz.gun_smith_table.filter.handgun"), false) {
             @Override
-            public void onPress() {
-                super.onPress();
+            public void onPress(net.minecraft.client.input.InputWithModifiers input) {
+                super.onPress(input);
                 parent.init();
                 parent.setIndexPage(0);
             }
@@ -59,8 +60,8 @@ public class GunPackList extends ContainerObjectSelectionList<GunPackList.Entry>
 
         Checkbox checkbox1 = new Checkbox(0, 0, 10, 10, Component.translatable("gui.tacz.gun_smith_table.filter.all"), true) {
             @Override
-            public void onPress() {
-                super.onPress();
+            public void onPress(net.minecraft.client.input.InputWithModifiers input) {
+                super.onPress(input);
                 gunPackList.forEach((checkbox) -> checkbox.selected = this.selected);
                 updateSelectedNamespaces();
             }
@@ -73,8 +74,8 @@ public class GunPackList extends ContainerObjectSelectionList<GunPackList.Entry>
 
             Checkbox checkbox = new Checkbox(0, 0, 10, 10, name, namespace, true) {
                 @Override
-                public void onPress() {
-                    super.onPress();
+                public void onPress(net.minecraft.client.input.InputWithModifiers input) {
+                    super.onPress(input);
                     checkbox1.selected = gunPackList.stream().allMatch(Checkbox::selected);
                     updateSelectedNamespaces();
                 }
@@ -178,7 +179,8 @@ public class GunPackList extends ContainerObjectSelectionList<GunPackList.Entry>
             return id;
         }
 
-        public void onPress() {
+        @Override
+        public void onPress(net.minecraft.client.input.InputWithModifiers input) {
             this.selected = !this.selected;
         }
 

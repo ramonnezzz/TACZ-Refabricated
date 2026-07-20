@@ -76,7 +76,7 @@ public class ClientGunTooltip implements ClientTooltipComponent {
     }
 
     @Override
-    public int getHeight() {
+    public int getHeight(Font font) {
         int height = 0;
         if (shouldShow(GunTooltipPart.DESCRIPTION) && this.desc != null) {
             height += 10 * this.desc.size() + 2;

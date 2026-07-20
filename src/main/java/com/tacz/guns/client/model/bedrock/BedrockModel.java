@@ -1,13 +1,10 @@
 package com.tacz.guns.client.model.bedrock;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.tacz.guns.client.model.IFunctionalRenderer;
 import com.tacz.guns.client.resource.pojo.model.*;
-import com.tacz.guns.compat.iris.IrisCompat;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
@@ -348,25 +345,19 @@ public class BedrockModel {
         return indexBones.get(name);
     }
 
-    public void render(PoseStack matrixStack, ItemDisplayContext transformType, RenderType renderType, int light, int overlay) {
-        render(matrixStack, transformType, renderType, light, overlay, 1.0F, 1.0F, 1.0F, 1.0F);
+    public void render(PoseStack matrixStack, ItemDisplayContext transformType, SubmitNodeCollector collector, RenderType renderType, int light, int overlay) {
+        render(matrixStack, transformType, collector, renderType, light, overlay, 1.0F, 1.0F, 1.0F, 1.0F);
     }
 
-    public void render(PoseStack matrixStack, ItemDisplayContext transformType, RenderType renderType, int light, int overlay, float red, float green, float blue, float alpha) {
-        MultiBufferSource.BufferSource bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
-        VertexConsumer builder = bufferSource.getBuffer(renderType);
-
+    public void render(PoseStack matrixStack, ItemDisplayContext transformType, SubmitNodeCollector collector, RenderType renderType, int light, int overlay, float red, float green, float blue, float alpha) {
         matrixStack.pushPose();
         for (BedrockPart model : shouldRender) {
-            model.render(matrixStack, transformType, builder, light, overlay, red, green, blue, alpha);
+            model.render(matrixStack, transformType, collector, renderType, light, overlay, red, green, blue, alpha);
         }
         matrixStack.popPose();
-        if (!IrisCompat.endBatch(bufferSource)) {
-            bufferSource.endBatch(renderType);
-        }
 
         for (IFunctionalRenderer renderer : delegateRenderers) {
-            renderer.render(matrixStack, builder, transformType, light, overlay);
+            renderer.render(matrixStack, collector, renderType, transformType, light, overlay);
         }
         delegateRenderers = new ArrayList<>();
     }

@@ -12,7 +12,6 @@ import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
-import net.minecraft.client.Timer;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.main.GameConfig;
 import net.minecraft.client.multiplayer.MultiPlayerGameMode;
@@ -54,23 +53,13 @@ public abstract class MinecraftMixin {
     @Nullable
     public LocalPlayer player;
 
-    @Shadow
-    private volatile boolean pause;
-
-    @Shadow
-    private float pausePartialTick;
-
-    @Shadow
-    @Final
-    private Timer timer;
-
     @Inject(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/packs/repository/PackRepository;reload()V"))
     private void tacz$addPacks(GameConfig gameConfig, CallbackInfo ci) {
         AddPackFindersEvent event = new AddPackFindersEvent(PackType.CLIENT_RESOURCES, ((PackRepositoryExtension) this.getResourcePackRepository())::tacz$addPackFinder, false);
         AddPackFindersEvent.CALLBACK.invoker().onAddPackFinders(event);
     }
 
-    @Inject(method = "clearLevel(Lnet/minecraft/client/gui/screens/Screen;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/GameRenderer;resetData()V"))
+    @Inject(method = "clearClientLevel(Lnet/minecraft/client/gui/screens/Screen;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/GameRenderer;resetData()V"))
     private void tacz$disconnect(Screen screen, CallbackInfo ci) {
         ClientHooks.firePlayerLogout(this.gameMode, this.player);
     }
@@ -88,7 +77,8 @@ public abstract class MinecraftMixin {
         eventRef.set(inputEvent);
         if (inputEvent.isCanceled()) {
             if (inputEvent.shouldSwingHand()) {
-                this.particleEngine.crack(blockPos, blockHitResult.getDirection());
+                // ParticleEngine.crack(BlockPos, Direction) sumiu na 26.2 sem substituto óbvio -
+                // perde a partícula de "lascar bloco" nesse swing cancelado (puramente cosmético)
                 this.player.swing(InteractionHand.MAIN_HAND);
             }
             ci.cancel();
@@ -112,7 +102,11 @@ public abstract class MinecraftMixin {
         }
     }
 
-    @WrapWithCondition(method = "startAttack", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;swing(Lnet/minecraft/world/InteractionHand;)V"))
+    // startUseItem() não tem mais um shouldSwing() único: virou um loop por InteractionHand com
+    // 3 pontos de swing() inline (interact/useItemOn/useItem), cada um checando
+    // swingSource()==CLIENT direto. Em vez de tentar ancorar nisso, aplica o mesmo
+    // WrapWithCondition de startAttack nos 3 swing() de startUseItem também - mesmo efeito líquido
+    @WrapWithCondition(method = {"startAttack", "startUseItem"}, at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;swing(Lnet/minecraft/world/InteractionHand;)V"))
     private boolean tacz$swingHandIfEventPermits(LocalPlayer instance, InteractionHand interactionHand, @Share("inputEvent") LocalRef<InputEvent.InteractionKeyMappingTriggered> inputEvent) {
         return inputEvent.get() == null || inputEvent.get().shouldSwingHand();
     }
@@ -129,12 +123,10 @@ public abstract class MinecraftMixin {
         }
     }
 
-    @ModifyExpressionValue(method = "startUseItem", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/InteractionResult;shouldSwing()Z"))
-    private boolean tacz$onlySwingHandIfNeeded(boolean original, @Share("inputEvent") LocalRef<InputEvent.InteractionKeyMappingTriggered> inputEvent) {
-        return original && (inputEvent.get() == null || inputEvent.get().shouldSwingHand());
-    }
-
-    @Inject(method = "pickBlock", at = @At(value = "FIELD", target = "Lnet/minecraft/world/entity/player/Abilities;instabuild:Z", ordinal = 0), cancellable = true)
+    // pickBlockOrEntity() não lê mais Abilities.instabuild diretamente (agora usa
+    // hasControlDown() pro parâmetro que passa pra handlePickItemFromBlock/Entity) - injeta
+    // no início do método em vez de ancorar num field-read que sumiu
+    @Inject(method = "pickBlockOrEntity", at = @At("HEAD"), cancellable = true)
     private void tacz$callInteractionPickInput(CallbackInfo ci) {
         if (tacz$onClickInput(2, this.options.keyPickItem, InteractionHand.MAIN_HAND).isCanceled())
             ci.cancel();

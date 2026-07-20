@@ -1,16 +1,17 @@
 package com.tacz.guns.client.model;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.tacz.guns.client.model.bedrock.BedrockCubePerFace;
 import com.tacz.guns.client.model.bedrock.BedrockPart;
 import com.tacz.guns.client.resource.pojo.model.FaceUVsItem;
-import net.minecraft.client.model.EntityModel;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.world.item.ItemDisplayContext;
 
-
-public class SlotModel extends EntityModel<Entity> {
+// Só usada pelos renderers de item excluídos da build (SpecialModelRenderer não portado ainda,
+// ver build.gradle) e por MuzzleFlashRender - não precisa mais ser um EntityModel vanilla, já
+// que nunca foi usada através do pipeline de renderização de entidades da vanilla
+public class SlotModel {
     private final BedrockPart bone;
 
     public SlotModel(boolean illuminated) {
@@ -24,12 +25,7 @@ public class SlotModel extends EntityModel<Entity> {
         this(false);
     }
 
-    @Override
-    public void setupAnim(Entity entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
-    }
-
-    @Override
-    public void renderToBuffer(PoseStack poseStack, VertexConsumer buffer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        bone.render(poseStack, ItemDisplayContext.GUI, buffer, packedLight, packedOverlay);
+    public void renderToBuffer(PoseStack poseStack, SubmitNodeCollector collector, RenderType renderType, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+        bone.render(poseStack, ItemDisplayContext.GUI, collector, renderType, packedLight, packedOverlay);
     }
 }

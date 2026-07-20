@@ -72,8 +72,10 @@ public class LivingEntityShoot {
         }
         if (SyncConfig.SERVER_SHOOT_NETWORK_V.get()) {
             // 根据 tick time 和 允许的网络延迟波动 计算 时间戳的接受窗口
-            MinecraftServer server = Objects.requireNonNull(shooter.getServer());
-            double tickTime = Math.max(server.tickTimes[server.getTickCount() % 100] * 1.0E-6D, 50);
+            // LivingEntity.getServer() sumiu - pega o server via level() (sempre ServerLevel
+            // aqui, já que esse trecho só roda no servidor); tickTimes virou getTickTimesNanos()
+            MinecraftServer server = ((net.minecraft.server.level.ServerLevel) shooter.level()).getServer();
+            double tickTime = Math.max(server.getTickTimesNanos()[server.getTickCount() % 100] * 1.0E-6D, 50);
             long alpha = System.currentTimeMillis() - data.baseTimestamp - timestamp;
             if (alpha < -300 || alpha > 300 + tickTime * 2) { // 允许 +- 300ms 的网络波动、窗口下限再扩大 2 个 tick time 时间(最坏情况射击会延迟2个 tick)
                 if (shooter instanceof ServerPlayer player) {
@@ -277,7 +279,7 @@ public class LivingEntityShoot {
         if (abstractGunItem.useDummyAmmo(itemStack)) {
             abstractGunItem.findAndExtractDummyAmmo(itemStack, neededAmount);
         } else {
-            shooter.tacz$getItemHandler(null)
+            ((cn.sh1rocu.tacz.api.mixin.ItemHandlerCapability) shooter).tacz$getItemHandler(null)
                     .map(cap -> abstractGunItem.findAndExtractInventoryAmmo(cap, itemStack, neededAmount));
         }
     }

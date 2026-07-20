@@ -4,11 +4,14 @@ import cn.sh1rocu.tacz.compat.rei.REIClientPlugin;
 import cn.sh1rocu.tacz.compat.rei.entry.AttachmentQueryEntry;
 import me.shedaniel.rei.api.common.category.CategoryIdentifier;
 import me.shedaniel.rei.api.common.display.Display;
+import me.shedaniel.rei.api.common.display.DisplaySerializer;
 import me.shedaniel.rei.api.common.entry.EntryIngredient;
 import me.shedaniel.rei.api.common.util.EntryIngredients;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class AttachmentQueryDisplay implements Display {
     private final AttachmentQueryEntry entry;
@@ -38,5 +41,18 @@ public class AttachmentQueryDisplay implements Display {
     @Override
     public CategoryIdentifier<?> getCategoryIdentifier() {
         return REIClientPlugin.ATTACHMENT_QUERY;
+    }
+
+    // Gerado em runtime, não vem de datapack
+    @Override
+    public Optional<net.minecraft.resources.Identifier> getDisplayLocation() {
+        return Optional.empty();
+    }
+
+    // Nunca sincronizado do servidor via REI, então não precisa de um DisplaySerializer
+    // registrado - null é permitido pela API
+    @Override
+    public @Nullable DisplaySerializer<? extends Display> getSerializer() {
+        return null;
     }
 }

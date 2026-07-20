@@ -33,7 +33,7 @@ public class ClientMessagePlayerDrawGun implements CustomPacketPayload {
 
     public void handle(ServerPlayer player, PacketSender responseSender) {
         Inventory inventory = player.getInventory();
-        int selected = inventory.selected;
+        int selected = inventory.getSelectedSlot();
         IGunOperator.fromLivingEntity(player).draw(() -> inventory.getItem(selected));
     }
 }

@@ -1,7 +1,6 @@
 package com.tacz.guns.client.model.functional;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.IGun;
@@ -13,7 +12,9 @@ import com.tacz.guns.client.resource.index.ClientGunIndex;
 import com.tacz.guns.client.resource.pojo.display.gun.ShellEjection;
 import com.tacz.guns.compat.iris.IrisCompat;
 import com.tacz.guns.resource.pojo.data.gun.GunData;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -79,13 +80,13 @@ public class ShellRender implements IFunctionalRenderer {
             }
 
             // 渲染抛壳
-            gunModel.delegateRender((poseStack1, vertexConsumer1, transformType1, light, overlay) -> {
-                SHELL_QUEUE.forEach(data -> renderSingleShell(transformType1, light, overlay, data, initialVelocity, acceleration, angularVelocity, model, location));
+            gunModel.delegateRender((poseStack1, collector1, renderType1, transformType1, light, overlay) -> {
+                SHELL_QUEUE.forEach(data -> renderSingleShell(collector1, transformType1, light, overlay, data, initialVelocity, acceleration, angularVelocity, model, location));
             });
         });
     }
 
-    private void renderSingleShell(ItemDisplayContext transformType1, int light, int overlay, Data data, Vector3f initialVelocity, Vector3f acceleration, Vector3f angularVelocity, BedrockAmmoModel model, Identifier location) {
+    private void renderSingleShell(SubmitNodeCollector collector, ItemDisplayContext transformType1, int light, int overlay, Data data, Vector3f initialVelocity, Vector3f acceleration, Vector3f angularVelocity, BedrockAmmoModel model, Identifier location) {
         // 再检查一次
         if (data.normal == null && data.pose == null) {
             return;
@@ -115,7 +116,7 @@ public class ShellRender implements IFunctionalRenderer {
         poseStack2.mulPose(Axis.ZP.rotationDegrees((float) zw));
         poseStack2.translate(0, -1.5, 0);
 
-        model.render(poseStack2, transformType1, RenderType.entityCutout(location), light, overlay);
+        model.render(poseStack2, transformType1, collector, RenderTypes.entityCutout(location), light, overlay);
     }
 
     private void checkShellQueue(long lifeTime) {
@@ -129,7 +130,7 @@ public class ShellRender implements IFunctionalRenderer {
     }
 
     @Override
-    public void render(PoseStack poseStack, VertexConsumer vertexBuffer, ItemDisplayContext transformType, int light, int overlay) {
+    public void render(PoseStack poseStack, SubmitNodeCollector collector, RenderType renderType, ItemDisplayContext transformType, int light, int overlay) {
         if (IrisCompat.isRenderShadow()) {
             return;
         }

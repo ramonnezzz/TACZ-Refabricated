@@ -1,8 +1,10 @@
 package com.tacz.guns.api.util;
 
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -13,7 +15,8 @@ import org.jetbrains.annotations.ApiStatus;
 public record LuaNbtAccessor(CompoundTag nbt) {
 
     public static LuaNbtAccessor from(ItemStack stack) {
-        return new LuaNbtAccessor(stack.getTag());
+        CustomData data = stack.get(DataComponents.CUSTOM_DATA);
+        return new LuaNbtAccessor(data == null ? new CompoundTag() : data.copyTag());
     }
 
     public static LuaNbtAccessor from(CompoundTag nbt) {
@@ -24,8 +27,10 @@ public record LuaNbtAccessor(CompoundTag nbt) {
         return nbt.contains(key);
     }
 
+    // CompoundTag.contains(String, int) saiu da API; reimplementado por cima do get() genérico
     public boolean contains(String key, int type) {
-        return nbt.contains(key, type);
+        Tag tag = nbt.get(key);
+        return tag != null && tag.getId() == type;
     }
 
     public LuaNbtAccessor newCompoundTag() {
@@ -33,34 +38,34 @@ public record LuaNbtAccessor(CompoundTag nbt) {
     }
 
     public int getInt(String key) {
-        return nbt.getInt(key);
+        return nbt.getIntOr(key, 0);
     }
 
     public double getDouble(String key) {
-        return nbt.getDouble(key);
+        return nbt.getDoubleOr(key, 0);
     }
 
     public float getFloat(String key) {
-        return nbt.getFloat(key);
+        return nbt.getFloatOr(key, 0);
     }
 
     public long getLong(String key) {
-        return nbt.getLong(key);
+        return nbt.getLongOr(key, 0);
     }
 
     public String getString(String key) {
-        return nbt.getString(key);
+        return nbt.getStringOr(key, "");
     }
 
     public boolean getBoolean(CompoundTag nbt, String key) {
-        return nbt.getBoolean(key);
+        return nbt.getBooleanOr(key, false);
     }
 
     public LuaNbtAccessor getCompound(String key) {
-        if (!nbt.contains(key, Tag.TAG_COMPOUND)) {
+        if (!contains(key, Tag.TAG_COMPOUND)) {
             return null;
         }
-        return from(nbt.getCompound(key));
+        return from(nbt.getCompoundOrEmpty(key));
     }
 
     public void putInt(String key, int value) {

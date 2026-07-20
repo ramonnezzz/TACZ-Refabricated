@@ -17,7 +17,8 @@ public class PlaySoundSourceEvent extends BaseEvent {
 
     public PlaySoundSourceEvent(SoundEngine engine, SoundInstance sound, Channel channel) {
         this.engine = engine;
-        this.name = sound.getLocation().getPath();
+        // SoundInstance.getLocation() sumiu - o Identifier agora vem de dentro do Sound
+        this.name = sound.getSound().getLocation().getPath();
         this.sound = sound;
         this.channel = channel;
     }

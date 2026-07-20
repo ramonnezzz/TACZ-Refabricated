@@ -6,17 +6,19 @@ import com.tacz.guns.config.sync.SyncConfig;
 import com.tacz.guns.resource.modifier.AttachmentCacheProperty;
 import com.tacz.guns.resource.modifier.custom.ExtraMovementModifier;
 import com.tacz.guns.resource.modifier.custom.WeightModifier;
+import com.tacz.guns.GunMod;
 import com.tacz.guns.resource.pojo.data.gun.MoveSpeed;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
 
-import java.util.UUID;
-
+// AttributeModifier trocou o id de UUID pra Identifier (não precisa mais de nome legível
+// separado - o Identifier já serve como nome/id único)
 public class LivingEntitySpeedModifier {
-    private static final UUID EXTRA_SPEED_MODIFIER_UUID = UUID.fromString("4D5696AE-A7C5-C59C-80E9-2A2DC8373C46");
-    private static final UUID WEIGHT_SPEED_MODIFIER_UUID = UUID.fromString("2CB6F5AD-C6D2-9D29-4E84-0856ACD47CDB");
+    private static final Identifier EXTRA_SPEED_MODIFIER_UUID = Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "extra_gun_speed_modifier");
+    private static final Identifier WEIGHT_SPEED_MODIFIER_UUID = Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "gun_speed_modifier");
     private final LivingEntity shooter;
     private final ShooterDataHolder dataHolder;
 
@@ -41,10 +43,10 @@ public class LivingEntitySpeedModifier {
                     float targetSpeed = cacheProperty.getCache(WeightModifier.ID);
                     targetSpeed *= (float) -weightFactor;
                     AttributeModifier currentModifier = speedModifier.getModifier(WEIGHT_SPEED_MODIFIER_UUID);
-                    if (currentModifier == null || currentModifier.getAmount() != targetSpeed) {
+                    if (currentModifier == null || currentModifier.amount() != targetSpeed) {
                         speedModifier.removeModifier(WEIGHT_SPEED_MODIFIER_UUID);
-                        speedModifier.addTransientModifier(new AttributeModifier(WEIGHT_SPEED_MODIFIER_UUID, "Gun Speed Modifier",
-                                targetSpeed, AttributeModifier.Operation.MULTIPLY_BASE));
+                        speedModifier.addTransientModifier(new AttributeModifier(WEIGHT_SPEED_MODIFIER_UUID,
+                                targetSpeed, AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
                     }
                 }
 
@@ -52,10 +54,10 @@ public class LivingEntitySpeedModifier {
                 if (speed != null) {
                     double targetSpeed = getTargetSpeed(speed);
                     AttributeModifier currentModifier = speedModifier.getModifier(EXTRA_SPEED_MODIFIER_UUID);
-                    if (currentModifier == null || currentModifier.getAmount() != targetSpeed) {
+                    if (currentModifier == null || currentModifier.amount() != targetSpeed) {
                         speedModifier.removeModifier(EXTRA_SPEED_MODIFIER_UUID);
-                        speedModifier.addTransientModifier(new AttributeModifier(EXTRA_SPEED_MODIFIER_UUID, "Extra Gun Speed Modifier",
-                                targetSpeed, AttributeModifier.Operation.MULTIPLY_TOTAL));
+                        speedModifier.addTransientModifier(new AttributeModifier(EXTRA_SPEED_MODIFIER_UUID,
+                                targetSpeed, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
                     }
                 }
             }

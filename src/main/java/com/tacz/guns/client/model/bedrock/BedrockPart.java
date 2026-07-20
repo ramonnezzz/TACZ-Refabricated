@@ -7,7 +7,8 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.world.item.ItemDisplayContext;
 import org.joml.Quaternionf;
 
@@ -43,6 +44,9 @@ public class BedrockPart {
     private float initRotX;
     private float initRotY;
     private float initRotZ;
+    // LightTexture.pack(15, 15) sumiu com a classe LightTexture - o formato do int empacotado
+    // (skyLight << 20 | blockLight << 4) não mudou, só o helper foi removido
+    protected static final int FULL_BRIGHT_LIGHT = 15 << 20 | 15 << 4;
 
     public BedrockPart(@Nullable String name) {
         this.name = name;
@@ -54,24 +58,26 @@ public class BedrockPart {
         this.z = z;
     }
 
-    public void render(PoseStack poseStack, ItemDisplayContext transformType, VertexConsumer consumer, int light, int overlay) {
-        this.render(poseStack, transformType, consumer, light, overlay, 1.0F, 1.0F, 1.0F, 1.0F);
+    public void render(PoseStack poseStack, ItemDisplayContext transformType, SubmitNodeCollector collector, RenderType renderType, int light, int overlay) {
+        this.render(poseStack, transformType, collector, renderType, light, overlay, 1.0F, 1.0F, 1.0F, 1.0F);
     }
 
-    public void render(PoseStack poseStack, ItemDisplayContext transformType, VertexConsumer consumer, int light, int overlay, float red, float green, float blue, float alpha) {
+    public void render(PoseStack poseStack, ItemDisplayContext transformType, SubmitNodeCollector collector, RenderType renderType, int light, int overlay, float red, float green, float blue, float alpha) {
         int cubePackedLight = light;
         if (illuminated) {
             // 最大亮度
-            cubePackedLight = LightTexture.pack(15, 15);
+            cubePackedLight = FULL_BRIGHT_LIGHT;
         }
         if (this.visible) {
             if (!this.cubes.isEmpty() || !this.children.isEmpty()) {
                 poseStack.pushPose();
                 this.translateAndRotateAndScale(poseStack);
-                this.compile(poseStack.last(), consumer, cubePackedLight, overlay, red, green, blue, alpha);
+                int finalCubePackedLight = cubePackedLight;
+                collector.submitCustomGeometry(poseStack, renderType, (pose, consumer) ->
+                        this.compile(pose, consumer, finalCubePackedLight, overlay, red, green, blue, alpha));
 
                 for (BedrockPart part : this.children) {
-                    part.render(poseStack, transformType, consumer, cubePackedLight, overlay, red, green, blue, alpha);
+                    part.render(poseStack, transformType, collector, renderType, cubePackedLight, overlay, red, green, blue, alpha);
                 }
 
                 poseStack.popPose();

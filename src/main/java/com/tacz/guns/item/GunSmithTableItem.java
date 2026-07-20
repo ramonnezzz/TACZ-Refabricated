@@ -4,13 +4,10 @@ import cn.sh1rocu.tacz.api.extension.IItem;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.builder.BlockItemBuilder;
 import com.tacz.guns.api.item.nbt.BlockItemDataAccessor;
-import com.tacz.guns.client.renderer.item.GunSmithTableItemRenderer;
 import com.tacz.guns.client.resource.index.ClientBlockIndex;
 import com.tacz.guns.inventory.tooltip.BlockItemTooltip;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
-import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -26,13 +23,15 @@ import java.util.Optional;
 
 public class GunSmithTableItem extends BlockItem implements BlockItemDataAccessor, IItem {
     public GunSmithTableItem(Block block) {
-        super(block, (new Item.Properties()).stacksTo(1));
+        this(block, defaultProperties());
     }
 
-    @Environment(EnvType.CLIENT)
-    @Override
-    public BuiltinItemRendererRegistry.DynamicItemRenderer getCustomRenderer() {
-        return GunSmithTableItemRenderer.INSTANCE.get();
+    public GunSmithTableItem(Block block, Item.Properties properties) {
+        super(block, properties);
+    }
+
+    public static Item.Properties defaultProperties() {
+        return (new Item.Properties()).stacksTo(1);
     }
 
     public static NonNullList<ItemStack> fillItemCategory() {

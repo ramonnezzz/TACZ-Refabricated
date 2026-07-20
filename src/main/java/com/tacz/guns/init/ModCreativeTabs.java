@@ -12,7 +12,6 @@ import com.tacz.guns.item.AmmoBoxItem;
 import com.tacz.guns.item.AmmoItem;
 import com.tacz.guns.item.AttachmentItem;
 import com.tacz.guns.item.GunSmithTableItem;
-import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -25,7 +24,7 @@ public class ModCreativeTabs {
 
     }
 
-    public static CreativeModeTab OTHER_TAB = regiser("other", FabricItemGroup.builder()
+    public static CreativeModeTab OTHER_TAB = regiser("other", CreativeModeTab.builder(CreativeModeTab.Row.TOP, 0)
             .title(Component.translatable("itemGroup.tab.tacz.other"))
             .icon(() -> ModItems.GUN_SMITH_TABLE.getDefaultInstance())
             .displayItems((parameters, output) -> {
@@ -36,72 +35,72 @@ public class ModCreativeTabs {
                 AmmoBoxItem.fillItemCategory(output);
             }).build());
 
-    public static CreativeModeTab AMMO_TAB = regiser("ammo", FabricItemGroup.builder()
+    public static CreativeModeTab AMMO_TAB = regiser("ammo", CreativeModeTab.builder(CreativeModeTab.Row.TOP, 1)
             .title(Component.translatable("itemGroup.tab.tacz.ammo"))
             .icon(() -> AmmoItemBuilder.create().setId(DefaultAssets.DEFAULT_AMMO_ID).build())
             .displayItems((parameters, output) -> output.acceptAll(AmmoItem.fillItemCategory())).build());
 
-    public static CreativeModeTab ATTACHMENT_SCOPE_TAB = regiser("scope", FabricItemGroup.builder()
+    public static CreativeModeTab ATTACHMENT_SCOPE_TAB = regiser("scope", CreativeModeTab.builder(CreativeModeTab.Row.TOP, 2)
             .title(Component.translatable("tacz.type.scope.name"))
             .icon(() -> AttachmentItemBuilder.create().setId(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "scope_acog_ta31")).build())
             .displayItems((parameters, output) -> output.acceptAll(AttachmentItem.fillItemCategory(AttachmentType.SCOPE))).build());
 
-    public static CreativeModeTab ATTACHMENT_MUZZLE_TAB = regiser("muzzle", FabricItemGroup.builder()
+    public static CreativeModeTab ATTACHMENT_MUZZLE_TAB = regiser("muzzle", CreativeModeTab.builder(CreativeModeTab.Row.TOP, 3)
             .title(Component.translatable("tacz.type.muzzle.name"))
             .icon(() -> AttachmentItemBuilder.create().setId(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "muzzle_compensator_trident")).build())
             .displayItems((parameters, output) -> output.acceptAll(AttachmentItem.fillItemCategory(AttachmentType.MUZZLE))).build());
 
-    public static CreativeModeTab ATTACHMENT_STOCK_TAB = regiser("stock", FabricItemGroup.builder()
+    public static CreativeModeTab ATTACHMENT_STOCK_TAB = regiser("stock", CreativeModeTab.builder(CreativeModeTab.Row.TOP, 4)
             .title(Component.translatable("tacz.type.stock.name"))
             .icon(() -> AttachmentItemBuilder.create().setId(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "stock_militech_b5")).build())
             .displayItems((parameters, output) -> output.acceptAll(AttachmentItem.fillItemCategory(AttachmentType.STOCK))).build());
 
-    public static CreativeModeTab ATTACHMENT_GRIP_TAB = regiser("grip", FabricItemGroup.builder()
+    public static CreativeModeTab ATTACHMENT_GRIP_TAB = regiser("grip", CreativeModeTab.builder(CreativeModeTab.Row.TOP, 5)
             .title(Component.translatable("tacz.type.grip.name"))
             .icon(() -> AttachmentItemBuilder.create().setId(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "grip_magpul_afg_2")).build())
             .displayItems((parameters, output) -> output.acceptAll(AttachmentItem.fillItemCategory(AttachmentType.GRIP))).build());
 
-    public static CreativeModeTab ATTACHMENT_EXTENDED_MAG_TAB = regiser("extended_mag", FabricItemGroup.builder()
+    public static CreativeModeTab ATTACHMENT_EXTENDED_MAG_TAB = regiser("extended_mag", CreativeModeTab.builder(CreativeModeTab.Row.TOP, 6)
             .title(Component.translatable("tacz.type.extended_mag.name"))
             .icon(() -> AttachmentItemBuilder.create().setId(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "extended_mag_3")).build())
             .displayItems((parameters, output) -> output.acceptAll(AttachmentItem.fillItemCategory(AttachmentType.EXTENDED_MAG))).build());
 
-    public static CreativeModeTab ATTACHMENT_LASER_TAB = regiser("laser", FabricItemGroup.builder()
+    public static CreativeModeTab ATTACHMENT_LASER_TAB = regiser("laser", CreativeModeTab.builder(CreativeModeTab.Row.TOP, 7)
             .title(Component.translatable("tacz.type.laser.name"))
             .icon(() -> AttachmentItemBuilder.create().setId(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "laser_compact")).build())
             .displayItems((parameters, output) -> output.acceptAll(AttachmentItem.fillItemCategory(AttachmentType.LASER))).build());
 
-    public static CreativeModeTab GUN_PISTOL_TAB = regiser("pistol", FabricItemGroup.builder()
+    public static CreativeModeTab GUN_PISTOL_TAB = regiser("pistol", CreativeModeTab.builder(CreativeModeTab.Row.TOP, 8)
             .title(Component.translatable("tacz.type.pistol.name"))
             .icon(() -> GunItemBuilder.create().setId(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "glock_17")).build())
             .displayItems((parameters, output) -> output.acceptAll(AbstractGunItem.fillItemCategory(GunTabType.PISTOL))).build());
 
-    public static CreativeModeTab GUN_SNIPER_TAB = regiser("sniper", FabricItemGroup.builder()
+    public static CreativeModeTab GUN_SNIPER_TAB = regiser("sniper", CreativeModeTab.builder(CreativeModeTab.Row.TOP, 9)
             .title(Component.translatable("tacz.type.sniper.name"))
             .icon(() -> GunItemBuilder.create().setId(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "ai_awp")).build())
             .displayItems((parameters, output) -> output.acceptAll(AbstractGunItem.fillItemCategory(GunTabType.SNIPER))).build());
 
-    public static CreativeModeTab GUN_RIFLE_TAB = regiser("rifle", FabricItemGroup.builder()
+    public static CreativeModeTab GUN_RIFLE_TAB = regiser("rifle", CreativeModeTab.builder(CreativeModeTab.Row.TOP, 10)
             .title(Component.translatable("tacz.type.rifle.name"))
             .icon(() -> GunItemBuilder.create().setId(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "ak47")).build())
             .displayItems((parameters, output) -> output.acceptAll(AbstractGunItem.fillItemCategory(GunTabType.RIFLE))).build());
 
-    public static CreativeModeTab GUN_SHOTGUN_TAB = regiser("shotgun", FabricItemGroup.builder()
+    public static CreativeModeTab GUN_SHOTGUN_TAB = regiser("shotgun", CreativeModeTab.builder(CreativeModeTab.Row.TOP, 11)
             .title(Component.translatable("tacz.type.shotgun.name"))
             .icon(() -> GunItemBuilder.create().setId(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "db_short")).build())
             .displayItems((parameters, output) -> output.acceptAll(AbstractGunItem.fillItemCategory(GunTabType.SHOTGUN))).build());
 
-    public static CreativeModeTab GUN_SMG_TAB = regiser("smg", FabricItemGroup.builder()
+    public static CreativeModeTab GUN_SMG_TAB = regiser("smg", CreativeModeTab.builder(CreativeModeTab.Row.TOP, 12)
             .title(Component.translatable("tacz.type.smg.name"))
             .icon(() -> GunItemBuilder.create().setId(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "hk_mp5a5")).build())
             .displayItems((parameters, output) -> output.acceptAll(AbstractGunItem.fillItemCategory(GunTabType.SMG))).build());
 
-    public static CreativeModeTab GUN_RPG_TAB = regiser("rpg", FabricItemGroup.builder()
+    public static CreativeModeTab GUN_RPG_TAB = regiser("rpg", CreativeModeTab.builder(CreativeModeTab.Row.TOP, 13)
             .title(Component.translatable("tacz.type.rpg.name"))
             .icon(() -> GunItemBuilder.create().setId(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "rpg7")).build())
             .displayItems((parameters, output) -> output.acceptAll(AbstractGunItem.fillItemCategory(GunTabType.RPG))).build());
 
-    public static CreativeModeTab GUN_MG_TAB = regiser("mg", FabricItemGroup.builder()
+    public static CreativeModeTab GUN_MG_TAB = regiser("mg", CreativeModeTab.builder(CreativeModeTab.Row.TOP, 14)
             .title(Component.translatable("tacz.type.mg.name"))
             .icon(() -> GunItemBuilder.create().setId(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "m249")).build())
             .displayItems((parameters, output) -> output.acceptAll(AbstractGunItem.fillItemCategory(GunTabType.MG))).build());

@@ -1,16 +1,12 @@
 package cn.sh1rocu.tacz.client;
 
-import cn.sh1rocu.simplebedrockmodel.api.event.ViewportEvent;
-import cn.sh1rocu.simplebedrockmodel.api.event.RenderTickEvent;
 import cn.sh1rocu.tacz.api.event.*;
-import cn.sh1rocu.tacz.api.extension.IItem;
 import com.tacz.guns.api.client.event.BeforeRenderHandEvent;
 import com.tacz.guns.api.client.event.RenderItemInHandBobEvent;
 import com.tacz.guns.api.client.event.SwapItemWithOffHand;
 import com.tacz.guns.api.event.common.EntityHurtByGunEvent;
 import com.tacz.guns.api.event.common.EntityKillByGunEvent;
 import com.tacz.guns.api.event.common.GunFireEvent;
-import com.tacz.guns.client.animation.screen.RefitTransform;
 import com.tacz.guns.client.event.*;
 import com.tacz.guns.client.init.ClientSetupEvent;
 import com.tacz.guns.client.init.ModContainerScreen;
@@ -25,8 +21,6 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
-import net.minecraft.core.registries.BuiltInRegistries;
 
 public class TaCZFabricClient implements ClientModInitializer {
 
@@ -37,22 +31,18 @@ public class TaCZFabricClient implements ClientModInitializer {
         ModContainerScreen.registerScreens();
         ModEntitiesRender.registerEntityRenderers();
         ParticleFactories.registerParticles();
-        BuiltInRegistries.ITEM.stream().filter(item -> item instanceof IItem).forEach(clientEx ->
-                BuiltinItemRendererRegistry.INSTANCE.register(clientEx, ((IItem) clientEx).getCustomRenderer()));
+        // Registro de renderer 3D custom de item removido: BuiltinItemRendererRegistry (Fabric)
+        // não existe mais na 26.2 (ver IItem.java)
         subscribeEvents();
     }
 
     private void subscribeEvents() {
         ClientLifecycleEvents.CLIENT_STARTED.register(client -> CommonRegistry.onLoadComplete());
 
-        RenderTickEvent.EVENT.register(RefitTransform::tickInterpolation);
-
-        ViewportEvent.CAMERA.register(CameraSetupEvent::applyLevelCameraAnimation);
+        // simplebedrockmodel-fabric ainda não tem build pra 26.2 (ver build.gradle): os hooks
+        // RenderTickEvent/ViewportEvent dela e os métodos que dependiam deles foram removidos
         BeforeRenderHandEvent.CALLBACK.register(CameraSetupEvent::applyItemInHandCameraAnimation);
-        ViewportEvent.FOV.register(CameraSetupEvent::applyScopeMagnification);
-        ViewportEvent.FOV.register(CameraSetupEvent::applyGunModelFovModifying);
         GunFireEvent.CALLBACK.register(CameraSetupEvent::initialCameraRecoil);
-        ViewportEvent.CAMERA.register(CameraSetupEvent::applyCameraRecoil);
         ComputeFovModifierEvent.CALLBACK.register(CameraSetupEvent::onComputeMovementFov);
 
         EntityHurtByGunEvent.POST.register(ClientHitMark::onEntityHurt);
@@ -62,10 +52,13 @@ public class TaCZFabricClient implements ClientModInitializer {
 
         ClientPlayConnectionEvents.DISCONNECT.register(CommonNetworkCacheEvent::onClientPlayerLoggingIn);
 
-        // RenderHandEvent.EVENT.register(FirstPersonRenderEvent::onRenderHand);
-
         RenderItemInHandBobEvent.VIEW.register(FirstPersonRenderGunEvent::cancelItemInHandViewBobbing);
         GunFireEvent.CALLBACK.register(FirstPersonRenderGunEvent::onGunFire);
+
+        // Recolocado do antigo hook RenderTickEvent (simplebedrockmodel-fabric, sem build 26.2)
+        // pro tick normal do client - perde granularidade por-frame mas continua funcionando
+        ClientTickEvents.END_CLIENT_TICK.register(com.tacz.guns.client.animation.screen.RefitTransform::tickInterpolation);
+        ClientTickEvents.END_CLIENT_TICK.register(RenderCrosshairEvent::onRenderTick);
 
         ClientTickEvents.START_CLIENT_TICK.register(client -> InventoryEvent.onPlayerChangeSelect(client, false));
         ClientTickEvents.END_CLIENT_TICK.register(client -> InventoryEvent.onPlayerChangeSelect(client, true));
@@ -81,13 +74,10 @@ public class TaCZFabricClient implements ClientModInitializer {
 
         TextureStitchEvent.POST.register(ReloadResourceEvent::onTextureStitchEventPost);
 
-        RenderTickEvent.EVENT.register(RenderCrosshairEvent::onRenderTick);
-
         RenderLivingEvent.POST.register(RenderHeadShotAABB::onRenderEntity);
 
         ClientTickEvents.START_CLIENT_TICK.register(TickAnimationEvent::tickAnimation);
         ClientTickEvents.END_CLIENT_TICK.register(TickAnimationEvent::tickAnimation);
-        RenderTickEvent.EVENT.register(TickAnimationEvent::tickAnimation);
 
         ItemTooltipCallback.EVENT.register(TooltipEvent::onTooltip);
 

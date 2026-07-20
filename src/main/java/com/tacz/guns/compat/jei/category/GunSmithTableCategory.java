@@ -14,7 +14,6 @@ import mezz.jei.api.recipe.category.IRecipeCategory;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -66,8 +65,7 @@ public class GunSmithTableCategory implements IRecipeCategory<GunSmithTableRecip
     private List<ItemStack> getInput(List<GunSmithTableIngredient> inputs, int index) {
         if (index < inputs.size()) {
             GunSmithTableIngredient ingredient = inputs.get(index);
-            ItemStack[] items = ingredient.getIngredient().getItems();
-            return Arrays.stream(items).map(stack -> stack.copyWithCount(ingredient.getCount())).toList();
+            return ingredient.getIngredient().items().map(holder -> new ItemStack(holder, ingredient.getCount())).toList();
         }
         return Collections.singletonList(ItemStack.EMPTY);
     }

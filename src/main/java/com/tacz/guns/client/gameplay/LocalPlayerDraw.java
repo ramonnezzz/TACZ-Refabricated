@@ -5,12 +5,10 @@ import cn.sh1rocu.tacz.mixin.accessor.BlockableEventLoopAccessor;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.event.common.GunDrawEvent;
 import com.tacz.guns.api.item.IGun;
-import com.tacz.guns.client.renderer.item.AnimateGeoItemRenderer;
 import com.tacz.guns.client.sound.SoundPlayManager;
 import com.tacz.guns.network.message.ClientMessagePlayerDrawGun;
 import com.tacz.guns.resource.modifier.AttachmentPropertyManager;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.item.ItemStack;
@@ -80,9 +78,8 @@ public class LocalPlayerDraw {
     }
 
     private void doPutAway(ItemStack lastItem, long putAwayTime) {
-        if (BuiltinItemRendererRegistry.INSTANCE.get(lastItem.getItem()) instanceof AnimateGeoItemRenderer<?, ?> renderer) {
-            renderer.tryExit(lastItem, putAwayTime);
-        }
+        // Chamada de AnimateGeoItemRenderer.tryExit (simplebedrockmodel-fabric, sem build 26.2)
+        // removida - a animação de baixar a arma segue só pelo áudio abaixo por ora
         TimelessAPI.getGunDisplay(lastItem).ifPresent(display -> {
             ((BlockableEventLoopAccessor) Minecraft.getInstance()).tacz$submitAsync(() -> {
                 // 播放收枪音效
@@ -93,16 +90,10 @@ public class LocalPlayerDraw {
     }
 
     private long getDrawTime(ItemStack lastItem, IGun lastGun, long drawTime) {
-        if (BuiltinItemRendererRegistry.INSTANCE.get(lastItem.getItem()) instanceof AnimateGeoItemRenderer<?, ?> renderer) {
-            long putAwayTime = renderer.getPutAwayTime(lastItem);
-            if (drawTime > putAwayTime) {
-                drawTime = putAwayTime;
-            }
-            data.clientDrawTimestamp = System.currentTimeMillis() + drawTime;
-        } else {
-            drawTime = 0;
-            data.clientDrawTimestamp = System.currentTimeMillis();
-        }
+        // AnimateGeoItemRenderer.getPutAwayTime (simplebedrockmodel-fabric, sem build 26.2)
+        // indisponível - sempre cai no caminho sem tempo de guardar customizado
+        drawTime = 0;
+        data.clientDrawTimestamp = System.currentTimeMillis();
         return drawTime;
     }
 

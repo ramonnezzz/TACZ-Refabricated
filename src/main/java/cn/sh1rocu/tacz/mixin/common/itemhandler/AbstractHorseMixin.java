@@ -1,5 +1,6 @@
 package cn.sh1rocu.tacz.mixin.common.itemhandler;
 
+import cn.sh1rocu.tacz.api.mixin.ItemHandlerCapability;
 import cn.sh1rocu.tacz.util.forge.LazyOptional;
 import cn.sh1rocu.tacz.util.itemhandler.IItemHandler;
 import cn.sh1rocu.tacz.util.itemhandler.InvWrapper;
@@ -7,7 +8,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.animal.Animal;
-import net.minecraft.world.entity.animal.horse.AbstractHorse;
+import net.minecraft.world.entity.animal.equine.AbstractHorse;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -17,8 +18,11 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+// LivingEntityMixin já faz LivingEntity implementar ItemHandlerCapability em runtime, mas o
+// javac não enxerga isso ao compilar esta classe isoladamente (o supertype real aqui é Animal,
+// que na fonte não declara a interface) - precisa redeclarar pra poder chamar o default method.
 @Mixin(AbstractHorse.class)
-public abstract class AbstractHorseMixin extends Animal {
+public abstract class AbstractHorseMixin extends Animal implements ItemHandlerCapability {
     @Shadow
     protected SimpleContainer inventory;
     @Unique
@@ -35,12 +39,12 @@ public abstract class AbstractHorseMixin extends Animal {
 
     @Override
     public LazyOptional<IItemHandler> tacz$getItemHandler(@Nullable Direction facing) {
-        return isAlive() && itemHandler != null ? itemHandler.cast() : super.tacz$getItemHandler(facing);
+        return isAlive() && itemHandler != null ? itemHandler.cast() : ItemHandlerCapability.super.tacz$getItemHandler(facing);
     }
 
     @Override
     public void tacz$invalidateItemHandler() {
-        super.tacz$invalidateItemHandler();
+        ItemHandlerCapability.super.tacz$invalidateItemHandler();
         if (this.itemHandler != null) {
             LazyOptional<?> oldHandler = this.itemHandler;
             this.itemHandler = null;

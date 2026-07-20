@@ -1,6 +1,7 @@
 package cn.sh1rocu.tacz.util.itemhandler;
 
 import cn.sh1rocu.tacz.util.itemhandler.entity.player.PlayerMainInvWrapper;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -30,8 +31,8 @@ public class ItemHandlerHelper {
     }
 
     public static boolean canItemStacksStack(@NotNull ItemStack a, @NotNull ItemStack b) {
-        if (!a.isEmpty() && ItemStack.isSameItem(a, b) && a.hasTag() == b.hasTag()) {
-            return (!a.hasTag() || Objects.equals(a.getTag(), b.getTag())) /*&& a.areCapsCompatible(b)*/;
+        if (!a.isEmpty() && ItemStack.isSameItem(a, b) && a.has(DataComponents.CUSTOM_DATA) == b.has(DataComponents.CUSTOM_DATA)) {
+            return (!a.has(DataComponents.CUSTOM_DATA) || Objects.equals(a.get(DataComponents.CUSTOM_DATA), b.get(DataComponents.CUSTOM_DATA))) /*&& a.areCapsCompatible(b)*/;
         } else {
             return false;
         }
@@ -41,10 +42,10 @@ public class ItemHandlerHelper {
         if (!a.isEmpty() && !b.isEmpty() && a.getItem() == b.getItem()) {
             if (!a.isStackable()) {
                 return false;
-            } else if (a.hasTag() != b.hasTag()) {
+            } else if (a.has(DataComponents.CUSTOM_DATA) != b.has(DataComponents.CUSTOM_DATA)) {
                 return false;
             } else {
-                return (!a.hasTag() || a.getTag().equals(b.getTag())) /*&& a.areCapsCompatible(b)*/;
+                return (!a.has(DataComponents.CUSTOM_DATA) || a.get(DataComponents.CUSTOM_DATA).equals(b.get(DataComponents.CUSTOM_DATA))) /*&& a.areCapsCompatible(b)*/;
             }
         } else {
             return false;
@@ -114,10 +115,10 @@ public class ItemHandlerHelper {
             }
 
             if (remainder.isEmpty() || remainder.getCount() != stack.getCount()) {
-                level.playSound((Player) null, player.getX(), player.getY() + (double) 0.5F, player.getZ(), SoundEvents.ITEM_PICKUP, SoundSource.PLAYERS, 0.2F, ((level.random.nextFloat() - level.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
+                level.playSound((Player) null, player.getX(), player.getY() + (double) 0.5F, player.getZ(), SoundEvents.ITEM_PICKUP, SoundSource.PLAYERS, 0.2F, ((level.getRandom().nextFloat() - level.getRandom().nextFloat()) * 0.7F + 1.0F) * 2.0F);
             }
 
-            if (!remainder.isEmpty() && !level.isClientSide) {
+            if (!remainder.isEmpty() && !level.isClientSide()) {
                 ItemEntity entityitem = new ItemEntity(level, player.getX(), player.getY() + (double) 0.5F, player.getZ(), remainder);
                 entityitem.setPickUpDelay(40);
                 entityitem.setDeltaMovement(entityitem.getDeltaMovement().multiply((double) 0.0F, (double) 1.0F, (double) 0.0F));

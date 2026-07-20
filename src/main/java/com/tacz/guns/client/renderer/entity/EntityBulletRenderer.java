@@ -1,11 +1,11 @@
 package com.tacz.guns.client.renderer.entity;
 
+import cn.sh1rocu.tacz.api.mixin.EntityRenderStateEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.client.model.BedrockAmmoModel;
 import com.tacz.guns.client.model.bedrock.BedrockModel;
-import com.tacz.guns.client.renderer.item.GunItemRendererWrapper;
 import com.tacz.guns.client.resource.GunDisplayInstance;
 import com.tacz.guns.client.resource.InternalAssetLoader;
 import com.tacz.guns.config.client.RenderConfig;
@@ -13,11 +13,14 @@ import com.tacz.guns.entity.EntityKineticBullet;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
@@ -33,7 +36,12 @@ import org.joml.Vector3f;
 import java.util.Objects;
 import java.util.Optional;
 
-public class EntityBulletRenderer extends EntityRenderer<EntityKineticBullet> {
+// render(entity, yaw, partialTicks, poseStack, buffer, light) virou createRenderState()/
+// extractRenderState()/submit() na 26.2 (rework extract/submit). Em vez de reextrair cada campo
+// individualmente pro novo RenderState, guarda a bullet e o partialTick direto nele (via
+// EntityRenderStateEntity, ver EntityRendererMixin) e reusa a lógica de desenho quase inalterada
+// dentro de submit() - mais simples que espalhar toda a interpolação em extractRenderState.
+public class EntityBulletRenderer extends EntityRenderer<EntityKineticBullet, EntityBulletRenderer.BulletRenderState> {
     public EntityBulletRenderer(EntityRendererProvider.Context pContext) {
         super(pContext);
     }
@@ -43,7 +51,24 @@ public class EntityBulletRenderer extends EntityRenderer<EntityKineticBullet> {
     }
 
     @Override
-    public void render(EntityKineticBullet bullet, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
+    public BulletRenderState createRenderState() {
+        return new BulletRenderState();
+    }
+
+    @Override
+    public void extractRenderState(EntityKineticBullet bullet, BulletRenderState state, float partialTick) {
+        super.extractRenderState(bullet, state, partialTick);
+        state.partialTick = partialTick;
+    }
+
+    @Override
+    public void submit(BulletRenderState state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState cameraRenderState) {
+        EntityKineticBullet bullet = (EntityKineticBullet) ((EntityRenderStateEntity) state).tacz$getEntity();
+        if (bullet == null) {
+            return;
+        }
+        float partialTicks = state.partialTick;
+        int packedLight = state.lightCoords;
         Identifier gunId = bullet.getGunId();
         Identifier gunDisplayId = bullet.getGunDisplayId();
         Optional<GunDisplayInstance> display = TimelessAPI.getGunDisplay(gunDisplayId, gunId);
@@ -61,19 +86,19 @@ public class EntityBulletRenderer extends EntityRenderer<EntityKineticBullet> {
                 poseStack.pushPose();
                 poseStack.translate(0, 1.5, 0);
                 poseStack.scale(-1, -1, 1);
-                ammoEntityModel.render(poseStack, ItemDisplayContext.GROUND, RenderType.entityTranslucentCull(textureLocation), packedLight, OverlayTexture.NO_OVERLAY);
+                ammoEntityModel.render(poseStack, ItemDisplayContext.GROUND, collector, RenderTypes.entityTranslucent(textureLocation, true), packedLight, OverlayTexture.NO_OVERLAY);
                 poseStack.popPose();
             }
 
             // 曳光弹发光
             if (bullet.isTracerAmmo()) {
                 float[] actualTracerColor = Objects.requireNonNullElse(tracerColor, ammoIndex.getTracerColor());
-                renderTracerAmmo(bullet, actualTracerColor, partialTicks, poseStack, packedLight);
+                renderTracerAmmo(bullet, actualTracerColor, partialTicks, poseStack, collector, packedLight);
             }
         });
     }
 
-    public void renderTracerAmmo(EntityKineticBullet bullet, float[] tracerColor, float partialTicks, PoseStack poseStack, int packedLight) {
+    public void renderTracerAmmo(EntityKineticBullet bullet, float[] tracerColor, float partialTicks, PoseStack poseStack, SubmitNodeCollector collector, int packedLight) {
         getModel().ifPresent(model -> {
             Entity shooter = bullet.getOwner();
             if (shooter == null) {
@@ -93,12 +118,14 @@ public class EntityBulletRenderer extends EntityRenderer<EntityKineticBullet> {
 
                 if (isFirstPerson) {
                     // 第一人称渲染自己的曳光弹的时候需要应用偏移
-                    Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
+                    Camera camera = Minecraft.getInstance().gameRenderer.mainCamera();
                     Vector3f offset = bullet.getFirstPersonRenderOffset();
                     if (offset == null) {
-                        offset = new Vector3f(GunItemRendererWrapper.muzzleRenderOffset);
-                        bullet.setCameraXRot(camera.getXRot());
-                        bullet.setCameraYRot(camera.getYRot());
+                        // GunItemRendererWrapper (simplebedrockmodel-fabric, sem build 26.2) não
+                        // existe mais - sem o offset real do cano, usa a origem da câmera
+                        offset = new Vector3f(0, 0, 0);
+                        bullet.setCameraXRot(camera.xRot());
+                        bullet.setCameraYRot(camera.yRot());
                         bullet.setFirstPersonRenderOffset(offset);
                     }
                     // 按照生存时间减少曳光弹的偏移，避免渲染位置距离落点太远
@@ -123,8 +150,8 @@ public class EntityBulletRenderer extends EntityRenderer<EntityKineticBullet> {
                 // 距离两格外才渲染，只在前 5 tick 判定
                 double bulletDistance = bulletPosition.distanceTo(shooter.getEyePosition());
                 if (bullet.tickCount >= 5 || bulletDistance > 2) {
-                    RenderType type = RenderType.energySwirl(InternalAssetLoader.DEFAULT_BULLET_TEXTURE, 15, 15);
-                    model.render(poseStack, ItemDisplayContext.NONE, type, packedLight, OverlayTexture.NO_OVERLAY,
+                    RenderType type = RenderTypes.energySwirl(InternalAssetLoader.DEFAULT_BULLET_TEXTURE, 15, 15);
+                    model.render(poseStack, ItemDisplayContext.NONE, collector, type, packedLight, OverlayTexture.NO_OVERLAY,
                             tracerColor[0], tracerColor[1], tracerColor[2], 1);
                 }
             }
@@ -139,15 +166,16 @@ public class EntityBulletRenderer extends EntityRenderer<EntityKineticBullet> {
 
     @Override
     public boolean shouldRender(EntityKineticBullet bullet, Frustum camera, double pCamX, double pCamY, double pCamZ) {
-        AABB aabb = bullet.getBoundingBoxForCulling().inflate(0.5);
+        AABB aabb = bullet.getBoundingBox().inflate(0.5);
         if (aabb.hasNaN() || aabb.getSize() == 0) {
             aabb = new AABB(bullet.getX() - 2.0, bullet.getY() - 2.0, bullet.getZ() - 2.0, bullet.getX() + 2.0, bullet.getY() + 2.0, bullet.getZ() + 2.0);
         }
         return camera.isVisible(aabb);
     }
 
-    @Override
-    public Identifier getTextureLocation(@NotNull EntityKineticBullet entity) {
-        return null;
+    // getTextureLocation(T) removido: não existe mais em EntityRenderer na 26.2
+
+    public static class BulletRenderState extends EntityRenderState {
+        public float partialTick;
     }
 }

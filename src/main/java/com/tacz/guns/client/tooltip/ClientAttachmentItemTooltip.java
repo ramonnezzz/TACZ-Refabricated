@@ -13,10 +13,11 @@ import com.tacz.guns.client.resource.ClientAssetsManager;
 import com.tacz.guns.client.resource.pojo.PackInfo;
 import com.tacz.guns.inventory.tooltip.AttachmentItemTooltip;
 import com.tacz.guns.resource.pojo.data.attachment.AttachmentData;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
@@ -73,8 +74,8 @@ public class ClientAttachmentItemTooltip implements ClientTooltipComponent {
     }
 
     @Override
-    public int getHeight() {
-        if (!Screen.hasShiftDown()) {
+    public int getHeight(Font font) {
+        if (!isShiftDown()) {
             return components.size() * 10 + 28;
         }
         return (showGuns.size() - 1) / 16 * 18 + 50 + components.size() * 10;
@@ -87,7 +88,7 @@ public class ClientAttachmentItemTooltip implements ClientTooltipComponent {
             width[0] = Math.max(width[0], font.width(packInfo) + 4);
         }
         components.forEach(c -> width[0] = Math.max(width[0], font.width(c)));
-        if (!Screen.hasShiftDown()) {
+        if (!isShiftDown()) {
             return Math.max(width[0], font.width(tips) + 4);
         } else {
             width[0] = Math.max(width[0], font.width(support) + 4);
@@ -105,7 +106,7 @@ public class ClientAttachmentItemTooltip implements ClientTooltipComponent {
             graphics.text(font, component, pX, yOffset, 0xffaa00, false);
             yOffset += 10;
         }
-        if (!Screen.hasShiftDown()) {
+        if (!isShiftDown()) {
             graphics.text(font, tips, pX, pY + 5 + this.components.size() * 10, 0x9e9e9e, false);
             yOffset += 10;
         } else {
@@ -119,7 +120,7 @@ public class ClientAttachmentItemTooltip implements ClientTooltipComponent {
 
     @Override
     public void extractImage(Font font, int mouseX, int mouseY, int width, int height, GuiGraphicsExtractor gui) {
-        if (!Screen.hasShiftDown()) {
+        if (!isShiftDown()) {
             return;
         }
         int minY = components.size() * 10 + 3;
@@ -201,5 +202,12 @@ public class ClientAttachmentItemTooltip implements ClientTooltipComponent {
                 components.addAll(result);
             });
         });
+    }
+
+    // Screen.hasShiftDown() sumiu na 26.2 (o estado de modificador virou algo que só vem
+    // junto de um KeyEvent/MouseButtonEvent) - consulta o teclado diretamente via GLFW
+    private static boolean isShiftDown() {
+        var window = Minecraft.getInstance().getWindow();
+        return InputConstants.isKeyDown(window, InputConstants.KEY_LSHIFT) || InputConstants.isKeyDown(window, InputConstants.KEY_RSHIFT);
     }
 }

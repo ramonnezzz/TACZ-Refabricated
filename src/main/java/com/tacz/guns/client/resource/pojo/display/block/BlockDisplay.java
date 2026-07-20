@@ -2,7 +2,7 @@ package com.tacz.guns.client.resource.pojo.display.block;
 
 import com.google.gson.annotations.SerializedName;
 import com.tacz.guns.client.resource.pojo.display.IDisplay;
-import net.minecraft.client.renderer.block.model.ItemTransforms;
+import net.minecraft.client.resources.model.cuboid.ItemTransforms;
 import net.minecraft.resources.Identifier;
 
 public class BlockDisplay implements IDisplay {

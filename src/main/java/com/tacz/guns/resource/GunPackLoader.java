@@ -16,7 +16,9 @@ import net.fabricmc.loader.api.metadata.version.VersionPredicate;
 import net.minecraft.SharedConstants;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.packs.FilePackResources;
+import net.minecraft.server.packs.PackLocationInfo;
 import net.minecraft.server.packs.PackResources;
+import net.minecraft.server.packs.PackSelectionConfig;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.metadata.pack.PackMetadataSection;
 import net.minecraft.server.packs.repository.Pack;
@@ -90,9 +92,10 @@ public enum GunPackLoader implements RepositorySource {
         List<PackResources> extensionPacks = new ArrayList<>();
 
         for (GunPack gunPack : gunPacks) {
+            PackLocationInfo location = new PackLocationInfo(gunPack.name, Component.literal(gunPack.name), PackSource.DEFAULT, Optional.empty());
             PackResources packResources;
             if (Files.isDirectory(gunPack.path)) {
-                packResources = new PathPackResources(gunPack.name, false, gunPack.path) {
+                packResources = new PathPackResources(location, gunPack.path) {
                     @Override
                     @NotNull
                     protected Path resolve(String... paths) {
@@ -104,15 +107,27 @@ public enum GunPackLoader implements RepositorySource {
                     }
                 };
             } else {
-                packResources = new FilePackResources(gunPack.name, gunPack.path.toFile(), false);
+                packResources = new FilePackResources.FileResourcesSupplier(gunPack.path.toFile()).openPrimary(location);
             }
             extensionPacks.add(packResources);
         }
 
+        PackLocationInfo topLocation = new PackLocationInfo("tacz_resources", Component.literal("TACZ Resources"), PackSource.BUILT_IN, Optional.empty());
+        PackMetadataSection packMeta = new PackMetadataSection(Component.translatable("tacz.resources.modresources"),
+                SharedConstants.getCurrentVersion().packVersion(packType).minorRange());
+        Pack.ResourcesSupplier resourcesSupplier = new Pack.ResourcesSupplier() {
+            @Override
+            public PackResources openPrimary(PackLocationInfo location) {
+                return open(location);
+            }
 
-        return Pack.readMetaAndCreate("tacz_resources", Component.literal("TACZ Resources"), true, (id) ->
-                new DelegatingPackResources(id, false, new PackMetadataSection(Component.translatable("tacz.resources.modresources"),
-                        SharedConstants.getCurrentVersion().getPackVersion(packType)), extensionPacks) {
+            @Override
+            public PackResources openFull(PackLocationInfo location, Pack.Metadata metadata) {
+                return open(location);
+            }
+
+            private DelegatingPackResources open(PackLocationInfo location) {
+                return new DelegatingPackResources(location, packMeta, extensionPacks) {
                     public IoSupplier<InputStream> getRootResource(String... paths) {
                         if (paths.length == 1 && paths[0].equals("pack.png")) {
                             Path logoPath = getModIcon("tacz");
@@ -122,7 +137,10 @@ public enum GunPackLoader implements RepositorySource {
                         }
                         return null;
                     }
-                }, packType, Pack.Position.BOTTOM, PackSource.BUILT_IN);
+                };
+            }
+        };
+        return Pack.readMetaAndCreate(topLocation, resourcesSupplier, packType, new PackSelectionConfig(true, Pack.Position.BOTTOM, false));
     }
 
     public static @Nullable Path getModIcon(String modId) {

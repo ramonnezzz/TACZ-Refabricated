@@ -2,6 +2,7 @@ package com.tacz.guns.item;
 
 import com.tacz.guns.entity.TargetMinecart;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.Item;
@@ -16,7 +17,15 @@ import org.jetbrains.annotations.NotNull;
 
 public class TargetMinecartItem extends Item {
     public TargetMinecartItem() {
-        super((new Item.Properties()).stacksTo(1));
+        this(defaultProperties());
+    }
+
+    public TargetMinecartItem(Item.Properties properties) {
+        super(properties);
+    }
+
+    public static Item.Properties defaultProperties() {
+        return (new Item.Properties()).stacksTo(1);
     }
 
     @NotNull
@@ -29,21 +38,23 @@ public class TargetMinecartItem extends Item {
             return InteractionResult.FAIL;
         } else {
             ItemStack itemstack = context.getItemInHand();
-            if (!level.isClientSide) {
+            if (!level.isClientSide()) {
                 RailShape railshape = blockstate.getBlock() instanceof BaseRailBlock baseRailBlock ? blockstate.getValue(baseRailBlock.getShapeProperty()) /*baseRailBlock.getRailDirection(blockstate, level, blockpos, null)*/ : RailShape.NORTH_SOUTH;
                 double yOffset = 0;
-                if (railshape.isAscending()) {
+                // isAscending() virou isSlope() (mesmo conceito: trilho em rampa)
+                if (railshape.isSlope()) {
                     yOffset = 0.5;
                 }
                 TargetMinecart targetMinecart = new TargetMinecart(level, (double) blockpos.getX() + 0.5, (double) blockpos.getY() + 0.0625 + yOffset, (double) blockpos.getZ() + 0.5);
-                if (itemstack.hasCustomHoverName()) {
+                if (itemstack.has(DataComponents.CUSTOM_NAME)) {
                     targetMinecart.setCustomName(itemstack.getHoverName());
                 }
                 level.addFreshEntity(targetMinecart);
                 level.gameEvent(context.getPlayer(), GameEvent.ENTITY_PLACE, blockpos);
             }
             itemstack.shrink(1);
-            return InteractionResult.sidedSuccess(level.isClientSide);
+            // sidedSuccess(boolean) sumiu - SUCCESS/SUCCESS_SERVER substituem o par client/server
+            return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.SUCCESS_SERVER;
         }
     }
 }

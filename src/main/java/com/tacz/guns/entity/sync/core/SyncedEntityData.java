@@ -151,9 +151,8 @@ public class SyncedEntityData {
         return ImmutableSet.copyOf(this.registeredDataKeys);
     }
 
-    @Nullable
     public DataHolder getDataHolder(Entity entity) {
-        return DataHolderCapabilityProvider.CAPABILITY.maybeGet(entity).flatMap(DataHolderCapabilityProvider::getDataHolder).orElse(null);
+        return entity.getAttachedOrCreate(DataHolderCapabilityProvider.ATTACHMENT);
     }
 
 //    public boolean hasSyncedDataKey(Class<? extends Entity> entityClass) {

@@ -4,24 +4,35 @@ import com.tacz.guns.api.DefaultAssets;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.IAmmo;
 import com.tacz.guns.api.item.IGun;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 public interface AmmoItemDataAccessor extends IAmmo {
     String AMMO_ID_TAG = "AmmoId";
 
+    private static CompoundTag getTag(ItemStack stack) {
+        CustomData data = stack.get(DataComponents.CUSTOM_DATA);
+        return data == null ? new CompoundTag() : data.copyTag();
+    }
+
+    private static void mutateTag(ItemStack stack, Consumer<CompoundTag> mutator) {
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, mutator);
+    }
+
     @Override
     @Nonnull
     default Identifier getAmmoId(ItemStack ammo) {
-        CompoundTag nbt = ammo.getOrCreateTag();
-        if (nbt.contains(AMMO_ID_TAG, Tag.TAG_STRING)) {
-            Identifier gunId = Identifier.tryParse(nbt.getString(AMMO_ID_TAG));
+        CompoundTag nbt = getTag(ammo);
+        if (nbt.contains(AMMO_ID_TAG)) {
+            Identifier gunId = Identifier.tryParse(nbt.getStringOr(AMMO_ID_TAG, ""));
             return Objects.requireNonNullElse(gunId, DefaultAssets.EMPTY_AMMO_ID);
         }
         return DefaultAssets.EMPTY_AMMO_ID;
@@ -29,12 +40,8 @@ public interface AmmoItemDataAccessor extends IAmmo {
 
     @Override
     default void setAmmoId(ItemStack ammo, @Nullable Identifier ammoId) {
-        CompoundTag nbt = ammo.getOrCreateTag();
-        if (ammoId != null) {
-            nbt.putString(AMMO_ID_TAG, ammoId.toString());
-            return;
-        }
-        nbt.putString(AMMO_ID_TAG, DefaultAssets.DEFAULT_AMMO_ID.toString());
+        String id = ammoId != null ? ammoId.toString() : DefaultAssets.DEFAULT_AMMO_ID.toString();
+        mutateTag(ammo, nbt -> nbt.putString(AMMO_ID_TAG, id));
     }
 
     @Override

@@ -3,10 +3,9 @@ package com.tacz.guns.mixin.client;
 import com.tacz.guns.api.client.other.KeepingItemRenderer;
 import com.tacz.guns.api.item.IGun;
 import net.minecraft.client.model.HumanoidModel;
-import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelPart;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.client.model.player.PlayerModel;
+import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -16,8 +15,12 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+// PlayerModel<T> virou classe concreta fixada em AvatarRenderState (não genérica sobre a
+// entidade) - setupAnim(LivingEntity, 5 floats) virou setupAnim(AvatarRenderState), que já
+// carrega o ageInTicks (mesmo sentinel de antes pra detectar primeira pessoa) e não precisa
+// mais da entidade em si, já que essa checagem só olha o item global de KeepingItemRenderer
 @Mixin(PlayerModel.class)
-public class PlayerModelMixin<T extends LivingEntity> extends HumanoidModel<T> {
+public class PlayerModelMixin extends HumanoidModel<AvatarRenderState> {
     @Shadow
     @Final
     public ModelPart leftSleeve;
@@ -29,20 +32,16 @@ public class PlayerModelMixin<T extends LivingEntity> extends HumanoidModel<T> {
         super(part);
     }
 
-    @Inject(method = "setupAnim(Lnet/minecraft/world/entity/LivingEntity;FFFFF)V", at = @At(value = "TAIL"))
-    private void setRotationAnglesTail(T entityIn, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch, CallbackInfo ci) {
-        if (!(entityIn instanceof Player player)) {
-            return;
-        }
-
+    @Inject(method = "setupAnim(Lnet/minecraft/client/renderer/entity/state/AvatarRenderState;)V", at = @At(value = "TAIL"))
+    private void setRotationAnglesTail(AvatarRenderState state, CallbackInfo ci) {
         // 用于清除默认的手臂旋转
         // 当第一人称渲染是，ageInTicks 正好是 0
         ItemStack currentItem = KeepingItemRenderer.getRenderer().getCurrentItem();
-        if (ageInTicks == 0F && IGun.getIGunOrNull(currentItem) != null) {
+        if (state.ageInTicks == 0F && IGun.getIGunOrNull(currentItem) != null) {
             tacz$resetAll(this.rightArm);
             tacz$resetAll(this.leftArm);
-            this.rightSleeve.copyFrom(this.rightArm);
-            this.leftSleeve.copyFrom(this.leftArm);
+            this.rightSleeve.loadPose(this.rightArm.storePose());
+            this.leftSleeve.loadPose(this.leftArm.storePose());
         }
     }
 

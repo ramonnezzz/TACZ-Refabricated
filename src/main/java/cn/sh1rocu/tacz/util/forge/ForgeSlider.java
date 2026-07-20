@@ -6,7 +6,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
 
@@ -117,20 +117,20 @@ public class ForgeSlider extends AbstractSliderButton {
     }
 
     @Override
-    public void onClick(double mouseX, double mouseY) {
-        this.setValueFromMouse(mouseX);
+    public void onClick(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
+        this.setValueFromMouse(event.x());
     }
 
     @Override
-    protected void onDrag(double mouseX, double mouseY, double dragX, double dragY) {
-        super.onDrag(mouseX, mouseY, dragX, dragY);
-        this.setValueFromMouse(mouseX);
+    protected void onDrag(net.minecraft.client.input.MouseButtonEvent event, double dragX, double dragY) {
+        super.onDrag(event, dragX, dragY);
+        this.setValueFromMouse(event.x());
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        boolean flag = keyCode == GLFW.GLFW_KEY_LEFT;
-        if (flag || keyCode == GLFW.GLFW_KEY_RIGHT) {
+    public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
+        boolean flag = event.key() == GLFW.GLFW_KEY_LEFT;
+        if (flag || event.key() == GLFW.GLFW_KEY_RIGHT) {
             if (this.minValue > this.maxValue)
                 flag = !flag;
             float f = flag ? -1F : 1F;
@@ -196,52 +196,14 @@ public class ForgeSlider extends AbstractSliderButton {
     @Override
     public void extractWidgetRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
         final Minecraft mc = Minecraft.getInstance();
-        blitWithBorder(guiGraphics, AbstractSliderButtonAccessor.tacz$getSliderLocation(), this.getX(), this.getY(), 0, ((AbstractSliderButtonAccessor) this).tacz$getTextureY(), this.width, this.height, 200, 20, 2, 3, 2, 2);
-
-        blitWithBorder(guiGraphics, AbstractSliderButtonAccessor.tacz$getSliderLocation(), this.getX() + (int) (this.value * (double) (this.width - 8)), this.getY(), 0, ((AbstractSliderButtonAccessor) this).tacz$getHandleTextureY(), 8, this.height, 200, 20, 2, 3, 2, 2);
+        // Textura única com offsets manuais (blitWithBorder) sumiu - o widget virou sprite-based,
+        // cada sprite já vem pré-fatiado (9-slice) via metadata, sem precisar de blit manual
+        int color = ARGB.white(this.alpha);
+        guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, ((AbstractSliderButtonAccessor) this).tacz$getSprite(), this.getX(), this.getY(), this.width, this.height, color);
+        guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, ((AbstractSliderButtonAccessor) this).tacz$getHandleSprite(), this.getX() + (int) (this.value * (double) (this.width - 8)), this.getY(), 8, this.height, color);
 
         // renderScrollingString foi substituído por extractScrollingStringOverContents (usa ActiveTextCollector,
         // sem bounds explícitos) - simplificado pra um texto centralizado, sem a animação de scroll
         guiGraphics.centeredText(mc.font, this.getMessage(), this.getX() + this.width / 2, this.getY() + (this.height - 8) / 2, this.active ? 16777215 : 10526880 | Mth.ceil(this.alpha * 255.0F) << 24);
-    }
-
-    private static void blitWithBorder(GuiGraphicsExtractor guiGraphics, Identifier texture, int x, int y, int u, int v, int width, int height, int textureWidth, int textureHeight, int topBorder, int bottomBorder, int leftBorder, int rightBorder) {
-        int fillerWidth = textureWidth - leftBorder - rightBorder;
-        int fillerHeight = textureHeight - topBorder - bottomBorder;
-        int canvasWidth = width - leftBorder - rightBorder;
-        int canvasHeight = height - topBorder - bottomBorder;
-        int xPasses = canvasWidth / fillerWidth;
-        int remainderWidth = canvasWidth % fillerWidth;
-        int yPasses = canvasHeight / fillerHeight;
-        int remainderHeight = canvasHeight % fillerHeight;
-
-        // Draw Border
-        // Top Left
-        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, texture, x, y, u, v, leftBorder, topBorder, textureWidth, textureHeight);
-        // Top Right
-        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, texture, x + leftBorder + canvasWidth, y, u + leftBorder + fillerWidth, v, rightBorder, topBorder, textureWidth, textureHeight);
-        // Bottom Left
-        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, texture, x, y + topBorder + canvasHeight, u, v + topBorder + fillerHeight, leftBorder, bottomBorder, textureWidth, textureHeight);
-        // Bottom Right
-        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, texture, x + leftBorder + canvasWidth, y + topBorder + canvasHeight, u + leftBorder + fillerWidth, v + topBorder + fillerHeight, rightBorder, bottomBorder, textureWidth, textureHeight);
-
-        for (int i = 0; i < xPasses + (remainderWidth > 0 ? 1 : 0); i++) {
-            // Top Border
-            guiGraphics.blit(RenderPipelines.GUI_TEXTURED, texture, x + leftBorder + (i * fillerWidth), y, u + leftBorder, v, (i == xPasses ? remainderWidth : fillerWidth), topBorder, textureWidth, textureHeight);
-            // Bottom Border
-            guiGraphics.blit(RenderPipelines.GUI_TEXTURED, texture, x + leftBorder + (i * fillerWidth), y + topBorder + canvasHeight, u + leftBorder, v + topBorder + fillerHeight, (i == xPasses ? remainderWidth : fillerWidth), bottomBorder, textureWidth, textureHeight);
-
-            // Throw in some filler for good measure
-            for (int j = 0; j < yPasses + (remainderHeight > 0 ? 1 : 0); j++)
-                guiGraphics.blit(RenderPipelines.GUI_TEXTURED, texture, x + leftBorder + (i * fillerWidth), y + topBorder + (j * fillerHeight), u + leftBorder, v + topBorder, (i == xPasses ? remainderWidth : fillerWidth), (j == yPasses ? remainderHeight : fillerHeight), textureWidth, textureHeight);
-        }
-
-        // Side Borders
-        for (int j = 0; j < yPasses + (remainderHeight > 0 ? 1 : 0); j++) {
-            // Left Border
-            guiGraphics.blit(RenderPipelines.GUI_TEXTURED, texture, x, y + topBorder + (j * fillerHeight), u, v + topBorder, leftBorder, (j == yPasses ? remainderHeight : fillerHeight), textureWidth, textureHeight);
-            // Right Border
-            guiGraphics.blit(RenderPipelines.GUI_TEXTURED, texture, x + leftBorder + canvasWidth, y + topBorder + (j * fillerHeight), u + leftBorder + fillerWidth, v + topBorder, rightBorder, (j == yPasses ? remainderHeight : fillerHeight), textureWidth, textureHeight);
-        }
     }
 }

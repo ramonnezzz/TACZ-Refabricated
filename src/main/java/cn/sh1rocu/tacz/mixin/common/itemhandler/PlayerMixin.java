@@ -1,5 +1,6 @@
 package cn.sh1rocu.tacz.mixin.common.itemhandler;
 
+import cn.sh1rocu.tacz.api.mixin.ItemHandlerCapability;
 import cn.sh1rocu.tacz.util.forge.LazyOptional;
 import cn.sh1rocu.tacz.util.itemhandler.CombinedInvWrapper;
 import cn.sh1rocu.tacz.util.itemhandler.IItemHandler;
@@ -8,7 +9,6 @@ import cn.sh1rocu.tacz.util.itemhandler.entity.player.PlayerInvWrapper;
 import cn.sh1rocu.tacz.util.itemhandler.entity.player.PlayerMainInvWrapper;
 import cn.sh1rocu.tacz.util.itemhandler.entity.player.PlayerOffhandInvWrapper;
 import com.mojang.authlib.GameProfile;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -24,8 +24,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+// mesma questão de compilação isolada que AbstractHorseMixin - ver o comentário lá
 @Mixin(Player.class)
-public abstract class PlayerMixin extends LivingEntity {
+public abstract class PlayerMixin extends LivingEntity implements ItemHandlerCapability {
     @Shadow
     @Final
     private Inventory inventory;
@@ -40,8 +41,10 @@ public abstract class PlayerMixin extends LivingEntity {
         super(entityType, world);
     }
 
+    // Player(Level, BlockPos, float, GameProfile) virou Player(Level, GameProfile) - sem posição/
+    // yaw inicial no construtor
     @Inject(method = "<init>", at = @At("TAIL"))
-    private void tacz$initClass(Level world, BlockPos pos, float yaw, GameProfile gameProfile, CallbackInfo ci) {
+    private void tacz$initClass(Level world, GameProfile gameProfile, CallbackInfo ci) {
         this.playerMainHandler = LazyOptional.of(() ->
                 new PlayerMainInvWrapper(this.inventory));
         this.playerEquipmentHandler = LazyOptional.of(() ->
@@ -66,6 +69,6 @@ public abstract class PlayerMixin extends LivingEntity {
             }
         }
 
-        return super.tacz$getItemHandler(facing);
+        return ItemHandlerCapability.super.tacz$getItemHandler(facing);
     }
 }

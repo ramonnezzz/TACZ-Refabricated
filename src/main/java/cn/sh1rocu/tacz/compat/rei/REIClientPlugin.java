@@ -19,7 +19,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeManager;
 
 import java.util.HashMap;
 import java.util.List;
@@ -49,8 +48,9 @@ public class REIClientPlugin implements me.shedaniel.rei.api.client.plugins.REIC
     @Override
     public void registerDisplays(DisplayRegistry registry) {
         if (Minecraft.getInstance().level == null) return;
-        RecipeManager recipeManager = Minecraft.getInstance().level.getRecipeManager();
-        List<GunSmithTableRecipe> recipes = ModRecipe.getAllGunSmithTableRecipes(recipeManager);
+        // Level.getRecipeManager() sumiu na 26.2 - o client só enxerga a lista de receitas via o
+        // cache sincronizado pelo servidor (ver ModRecipe.setClientGunSmithTableRecipes/ServerMessageSyncGunSmithTableRecipes)
+        List<GunSmithTableRecipe> recipes = ModRecipe.getAllGunSmithTableRecipesClient();
 
         for (var entry : displays.entrySet()) {
             TimelessAPI.getCommonBlockIndex(entry.getKey()).ifPresent(blockIndex -> {

@@ -1,7 +1,6 @@
 package com.tacz.guns.client.model.functional;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.IAttachment;
@@ -15,9 +14,9 @@ import com.tacz.guns.client.resource.pojo.display.gun.MuzzleFlash;
 import com.tacz.guns.compat.iris.IrisCompat;
 import com.tacz.guns.resource.modifier.custom.SilenceModifier;
 import it.unimi.dsi.fastutil.Pair;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -61,16 +60,15 @@ public class MuzzleFlashRender implements IFunctionalRenderer {
             muzzleFlashNormal = new Matrix3f(poseStack.last().normal());
             muzzleFlashPose = new Matrix4f(poseStack.last().pose());
         }
-        bedrockModel.delegateRender((poseStack1, vertexConsumer1, transformType1, light, overlay) -> doRender(light, overlay, muzzleFlash, time));
+        bedrockModel.delegateRender((poseStack1, collector1, renderType1, transformType1, light, overlay) -> doRender(collector1, light, overlay, muzzleFlash, time));
     }
 
-    private static void doRender(int light, int overlay, MuzzleFlash muzzleFlash, long time) {
+    private static void doRender(SubmitNodeCollector collector, int light, int overlay, MuzzleFlash muzzleFlash, long time) {
         if (muzzleFlashNormal != null && muzzleFlashPose != null) {
             float scale = 0.5f * muzzleFlash.getScale();
             float scaleTime = TIME_RANGE / 2.0f;
             scale = time < scaleTime ? (scale * (time / scaleTime)) : scale;
             muzzleFlashStartMark = false;
-            MultiBufferSource multiBufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
 
             // 推送到指定位置
             PoseStack poseStack2 = new PoseStack();
@@ -83,8 +81,8 @@ public class MuzzleFlashRender implements IFunctionalRenderer {
                 poseStack2.scale(scale, scale, scale);
                 poseStack2.mulPose(Axis.ZP.rotationDegrees(muzzleFlashRandomRotate));
                 poseStack2.translate(0, -1, 0);
-                RenderType renderTypeBg = RenderType.entityTranslucent(muzzleFlash.getTexture());
-                MUZZLE_FLASH_MODEL.renderToBuffer(poseStack2, multiBufferSource.getBuffer(renderTypeBg), light, overlay, 1.0F, 1.0F, 1.0F, 1.0F);
+                RenderType renderTypeBg = RenderTypes.entityTranslucent(muzzleFlash.getTexture());
+                MUZZLE_FLASH_MODEL.renderToBuffer(poseStack2, collector, renderTypeBg, light, overlay, 1.0F, 1.0F, 1.0F, 1.0F);
             }
             poseStack2.popPose();
 
@@ -94,8 +92,8 @@ public class MuzzleFlashRender implements IFunctionalRenderer {
                 poseStack2.scale(scale / 2, scale / 2, scale / 2);
                 poseStack2.mulPose(Axis.ZP.rotationDegrees(muzzleFlashRandomRotate));
                 poseStack2.translate(0, -0.9, 0);
-                RenderType renderTypeLight = RenderType.energySwirl(muzzleFlash.getTexture(), 1, 1);
-                MUZZLE_FLASH_MODEL.renderToBuffer(poseStack2, multiBufferSource.getBuffer(renderTypeLight), light, overlay, 1.0F, 1.0F, 1.0F, 1.0F);
+                RenderType renderTypeLight = RenderTypes.energySwirl(muzzleFlash.getTexture(), 1, 1);
+                MUZZLE_FLASH_MODEL.renderToBuffer(poseStack2, collector, renderTypeLight, light, overlay, 1.0F, 1.0F, 1.0F, 1.0F);
             }
             poseStack2.popPose();
         }
@@ -103,7 +101,7 @@ public class MuzzleFlashRender implements IFunctionalRenderer {
 
     @Override
     @SuppressWarnings("unchecked")
-    public void render(PoseStack poseStack, VertexConsumer vertexBuffer, ItemDisplayContext transformType, int light, int overlay) {
+    public void render(PoseStack poseStack, SubmitNodeCollector collector, RenderType renderType, ItemDisplayContext transformType, int light, int overlay) {
         if (IrisCompat.isRenderShadow()) {
             return;
         }

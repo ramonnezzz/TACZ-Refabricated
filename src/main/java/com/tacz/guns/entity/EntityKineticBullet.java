@@ -37,15 +37,15 @@ import com.tacz.guns.util.EntityUtil;
 import com.tacz.guns.util.ExplodeUtil;
 import com.tacz.guns.util.TacHitResult;
 import com.tacz.guns.util.block.BlockRayTrace;
-import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
@@ -80,12 +80,15 @@ import static com.tacz.guns.api.event.common.GunDamageSourcePart.NON_ARMOR_PIERC
  * 动能武器打出的子弹实体。
  */
 public class EntityKineticBullet extends Projectile implements IEntityAdditionalSpawnData {
-    public static final EntityType<EntityKineticBullet> TYPE = FabricEntityTypeBuilder
-            .<EntityKineticBullet>create(MobCategory.MISC, EntityKineticBullet::new)
-            .disableSummon().disableSaving().fireImmune()
-            .dimensions(EntityDimensions.scalable(0.0625F, 0.0625F))
-            .trackRangeChunks(5).trackedUpdateRate(5)
-            .forceTrackedVelocityUpdates(false).build();
+    // FabricEntityTypeBuilder sumiu do fabric-api na 26.2 - o builder da vanilla já cobre tudo
+    // que ele adicionava (noSummon/noSave/fireImmune/sized/clientTrackingRange/updateInterval),
+    // exceto forceTrackedVelocityUpdates (sem equivalente vanilla - comportamento padrão agora)
+    public static final EntityType<EntityKineticBullet> TYPE = EntityType.Builder
+            .<EntityKineticBullet>of(EntityKineticBullet::new, MobCategory.MISC)
+            .noSummon().noSave().fireImmune()
+            .sized(0.0625F, 0.0625F)
+            .clientTrackingRange(5).updateInterval(5)
+            .build(ResourceKey.create(Registries.ENTITY_TYPE, Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "bullet")));
     public static final TagKey<EntityType<?>> USE_MAGIC_DAMAGE_ON = TagKey.create(Registries.ENTITY_TYPE, Identifier.parse("tacz:use_magic_damage_on"));
     public static final TagKey<EntityType<?>> USE_VOID_DAMAGE_ON = TagKey.create(Registries.ENTITY_TYPE, Identifier.parse("tacz:use_void_damage_on"));
     public static final TagKey<EntityType<?>> PRETEND_MELEE_DAMAGE_ON = TagKey.create(Registries.ENTITY_TYPE, Identifier.parse("tacz:pretend_melee_damage_on"));
@@ -236,7 +239,7 @@ public class EntityKineticBullet extends Projectile implements IEntityAdditional
     }
 
     @Override
-    protected void defineSynchedData() {
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
     }
 
     @Override
@@ -245,7 +248,7 @@ public class EntityKineticBullet extends Projectile implements IEntityAdditional
         // 调用 TaC 子弹服务器事件
         this.onBulletTick();
         // 粒子效果
-        if (this.level().isClientSide) {
+        if (this.level().isClientSide()) {
             AmmoParticleSpawner.addParticle(this);
         }
         // 子弹模型的旋转与抛物线
@@ -429,7 +432,7 @@ public class EntityKineticBullet extends Projectile implements IEntityAdditional
         }
         // 点燃
         if (this.igniteEntity && AmmoConfig.IGNITE_ENTITY.get()) {
-            entity.setSecondsOnFire(this.igniteEntityTime);
+            entity.igniteForSeconds(this.igniteEntityTime);
             // 给予粒子效果
             if (this.level() instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(ParticleTypes.LAVA, entity.getX(), entity.getY() + entity.getEyeHeight(), entity.getZ(), 1, 0, 0, 0, 0);
@@ -462,7 +465,7 @@ public class EntityKineticBullet extends Projectile implements IEntityAdditional
         // 只对 LivingEntity 执行击杀判定
         if (parts.core() instanceof LivingEntity livingCore) {
             // 事件同步，从服务端到客户端
-            if (!level().isClientSide) {
+            if (!level().isClientSide()) {
                 int attackerId = attacker == null ? 0 : attacker.getId();
                 // 如果生物死了
                 if (livingCore.isDeadOrDying()) {
@@ -563,7 +566,7 @@ public class EntityKineticBullet extends Projectile implements IEntityAdditional
      */
     private Pair<DamageSource, DamageSource> createDamageSources(MaybeMultipartEntity parts) {
         DamageSource source1, source2;
-        var hitPartType = parts.hitPart().getType();
+        var hitPartType = parts.hitPart().getType().builtInRegistryHolder();
         var directCause = hitPartType.is(PRETEND_MELEE_DAMAGE_ON) ? this.getOwner() : this;
         // 给末影人造成伤害
         if (hitPartType.is(USE_MAGIC_DAMAGE_ON)) {
@@ -595,8 +598,8 @@ public class EntityKineticBullet extends Projectile implements IEntityAdditional
     }
 
     @Override
-    public @NotNull Packet<ClientGamePacketListener> getAddEntityPacket() {
-        return IEntityAdditionalSpawnData.getEntitySpawningPacket(this);
+    public @NotNull Packet<ClientGamePacketListener> getAddEntityPacket(@NotNull net.minecraft.server.level.ServerEntity serverEntity) {
+        return IEntityAdditionalSpawnData.getEntitySpawningPacket(this, serverEntity);
     }
 
     @Override
@@ -695,10 +698,11 @@ public class EntityKineticBullet extends Projectile implements IEntityAdditional
 
     public Optional<float[]> getTracerColorOverride() {
         var pd = ((IEntityPersistentData) this).tacz$getPersistentData();
-        if (!pd.contains(TRACER_COLOR_OVERRIDER_KEY, Tag.TAG_INT_ARRAY)) {
+        var intsOpt = pd.getIntArray(TRACER_COLOR_OVERRIDER_KEY);
+        if (intsOpt.isEmpty()) {
             return Optional.empty();
         } else {
-            var ints = pd.getIntArray(TRACER_COLOR_OVERRIDER_KEY);
+            var ints = intsOpt.get();
             // 请避免使用 1 或者 2 个值的数组。
             // 此处 1~2 个值的分支仅为优雅地处理异常情况来代替崩溃所作的措施 :(
             switch (ints.length) {
@@ -732,7 +736,7 @@ public class EntityKineticBullet extends Projectile implements IEntityAdditional
 
     public float getTracerSizeOverride() {
         var pd = ((IEntityPersistentData) this).tacz$getPersistentData();
-        return pd.contains(TRACER_SIZE_OVERRIDER_KEY, Tag.TAG_ANY_NUMERIC) ? pd.getFloat(TRACER_SIZE_OVERRIDER_KEY) : 1;
+        return pd.getFloatOr(TRACER_SIZE_OVERRIDER_KEY, 1);
     }
 
     @Override

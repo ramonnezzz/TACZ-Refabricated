@@ -48,7 +48,9 @@ public class ClientHitMark {
                     damageAmount = event.getAmount();
                 }
                 float distance = player.distanceTo(event.getHurtEntity());
-                player.displayClientMessage(Component.translatable("message.tacz.target_minecart.hit", String.format("%.1f", damageAmount), String.format("%.2f", distance)), true);
+                // displayClientMessage(Component, true) virou Hud.setOverlayMessage (mensagem
+                // de action bar, que era o efeito real do "true" aqui)
+                Minecraft.getInstance().gui.hud.setOverlayMessage(Component.translatable("message.tacz.target_minecart.hit", String.format("%.1f", damageAmount), String.format("%.2f", distance)), false);
 
                 lastHitTimestamp = System.currentTimeMillis();
             }

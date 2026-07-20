@@ -1,6 +1,6 @@
 package com.tacz.guns.client.renderer.block;
 
-import com.mojang.authlib.minecraft.MinecraftProfileTexture;
+import cn.sh1rocu.tacz.api.mixin.BlockEntityRenderStateEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import com.tacz.guns.block.TargetBlock;
@@ -10,22 +10,28 @@ import com.tacz.guns.client.model.bedrock.BedrockPart;
 import com.tacz.guns.client.resource.InternalAssetLoader;
 import com.tacz.guns.config.client.RenderConfig;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.core.Direction;
-import net.minecraft.core.UUIDUtil;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.player.PlayerSkin;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.Optional;
 
-public class TargetRenderer implements BlockEntityRenderer<TargetBlockEntity> {
+// render(...) virou createRenderState()/extractRenderState()/submit() na 26.2, igual
+// StatueRenderer/EntityBulletRenderer - mesmo truque de stash da BlockEntity via
+// BlockEntityRenderStateEntity (ver BlockEntityRenderDispatcherMixin/BlockEntityRenderStateMixin)
+public class TargetRenderer implements BlockEntityRenderer<TargetBlockEntity, TargetRenderer.TargetRenderState> {
     private static final String UPPER_NAME = "target_upper";
     private static final String HEAD_NAME = "head";
 
@@ -37,7 +43,24 @@ public class TargetRenderer implements BlockEntityRenderer<TargetBlockEntity> {
     }
 
     @Override
-    public void render(TargetBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource bufferIn, int combinedLightIn, int combinedOverlayIn) {
+    public TargetRenderState createRenderState() {
+        return new TargetRenderState();
+    }
+
+    @Override
+    public void extractRenderState(TargetBlockEntity blockEntity, TargetRenderState state, float partialTick, Vec3 cameraPos, ModelFeatureRenderer.CrumblingOverlay overlay) {
+        BlockEntityRenderer.super.extractRenderState(blockEntity, state, partialTick, cameraPos, overlay);
+        state.partialTick = partialTick;
+    }
+
+    @Override
+    public void submit(TargetRenderState state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState cameraRenderState) {
+        TargetBlockEntity blockEntity = (TargetBlockEntity) ((BlockEntityRenderStateEntity) state).tacz$getBlockEntity();
+        if (blockEntity == null) {
+            return;
+        }
+        float partialTick = state.partialTick;
+        int combinedLightIn = state.lightCoords;
         getModel().ifPresent(model -> {
             BlockState blockState = blockEntity.getBlockState();
             Direction facing = blockState.getValue(TargetBlock.FACING);
@@ -52,22 +75,20 @@ public class TargetRenderer implements BlockEntityRenderer<TargetBlockEntity> {
             poseStack.mulPose(Axis.YN.rotationDegrees(facing.get2DDataValue() * 90));
             poseStack.mulPose(Axis.ZN.rotationDegrees(180));
             poseStack.translate(0, -1.275, 0.0125);
-            RenderType renderType = RenderType.entityTranslucent(InternalAssetLoader.TARGET_TEXTURE_LOCATION);
-            model.render(poseStack, ItemDisplayContext.NONE, renderType, combinedLightIn, combinedOverlayIn);
+            RenderType renderType = RenderTypes.entityTranslucent(InternalAssetLoader.TARGET_TEXTURE_LOCATION);
+            model.render(poseStack, ItemDisplayContext.NONE, collector, renderType, combinedLightIn, 0);
             if (blockEntity.getOwner() != null) {
                 poseStack.translate(0, 1.25, 0);
                 poseStack.mulPose(Axis.XP.rotationDegrees(deg));
+                // SkinManager.getInsecureSkinInformation/registerTexture sumiram - a busca de
+                // skin agora é assíncrona (createLookup retorna um Supplier com fallback pro
+                // skin padrão enquanto carrega, em vez do Map direto de antes)
                 Minecraft minecraft = Minecraft.getInstance();
-                var map = minecraft.getSkinManager().getInsecureSkinInformation(blockEntity.getOwner());
-                Identifier skin;
-                if (map.containsKey(MinecraftProfileTexture.Type.SKIN)) {
-                    skin = minecraft.getSkinManager().registerTexture(map.get(MinecraftProfileTexture.Type.SKIN), MinecraftProfileTexture.Type.SKIN);
-                } else {
-                    skin = DefaultPlayerSkin.getDefaultSkin(UUIDUtil.getOrCreatePlayerUUID(blockEntity.getOwner()));
-                }
+                PlayerSkin playerSkin = minecraft.getSkinManager().createLookup(blockEntity.getOwner(), false).get();
+                Identifier skin = playerSkin.body().texturePath();
                 headModel.visible = true;
-                RenderType skullRenderType = RenderType.entityCutout(skin);
-                headModel.render(poseStack, ItemDisplayContext.NONE, bufferIn.getBuffer(skullRenderType), combinedLightIn, OverlayTexture.NO_OVERLAY);
+                RenderType skullRenderType = RenderTypes.entityCutout(skin);
+                headModel.render(poseStack, ItemDisplayContext.NONE, collector, skullRenderType, combinedLightIn, OverlayTexture.NO_OVERLAY);
             }
             poseStack.popPose();
         });
@@ -79,7 +100,11 @@ public class TargetRenderer implements BlockEntityRenderer<TargetBlockEntity> {
     }
 
     @Override
-    public boolean shouldRenderOffScreen(TargetBlockEntity blockEntity) {
+    public boolean shouldRenderOffScreen() {
         return true;
+    }
+
+    public static class TargetRenderState extends net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState {
+        public float partialTick;
     }
 }
