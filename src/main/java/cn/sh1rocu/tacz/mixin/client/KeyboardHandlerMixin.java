@@ -3,6 +3,7 @@ package cn.sh1rocu.tacz.mixin.client;
 import cn.sh1rocu.tacz.api.event.InputEvent;
 import net.minecraft.client.KeyboardHandler;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.input.KeyEvent;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -10,6 +11,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+// keyPress(long,int,int,int,int) virou keyPress(long,int,KeyEvent) na 26.2 - os 3 campos que
+// antes eram int soltos (key/scancode/modifiers) agora vêm agrupados no record KeyEvent
 @Mixin(KeyboardHandler.class)
 public class KeyboardHandlerMixin {
     @Shadow
@@ -17,9 +20,9 @@ public class KeyboardHandlerMixin {
     private Minecraft minecraft;
 
     @Inject(method = "keyPress", at = @At("TAIL"))
-    private void tacz$onKey(long window, int key, int scancode, int action, int modifiers, CallbackInfo ci) {
-        if (window == this.minecraft.getWindow().getWindow()) {
-            InputEvent.Key.EVENT.invoker().onKey(new InputEvent.Key(key, scancode, action, modifiers));
+    private void tacz$onKey(long window, int action, KeyEvent event, CallbackInfo ci) {
+        if (window == this.minecraft.getWindow().handle()) {
+            InputEvent.Key.EVENT.invoker().onKey(new InputEvent.Key(event.key(), event.scancode(), action, event.modifiers()));
         }
     }
 }

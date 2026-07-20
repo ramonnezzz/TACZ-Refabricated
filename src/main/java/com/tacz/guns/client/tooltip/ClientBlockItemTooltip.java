@@ -38,7 +38,7 @@ public class ClientBlockItemTooltip implements ClientTooltipComponent {
 
 
     @Override
-    public int getHeight() {
+    public int getHeight(Font font) {
         return components.size() * 10 + (packInfo != null ? 16 : 0);
     }
 

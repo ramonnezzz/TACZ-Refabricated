@@ -1,6 +1,7 @@
 package com.tacz.guns.block;
 
 import com.mojang.authlib.GameProfile;
+import com.mojang.serialization.MapCodec;
 import com.tacz.guns.block.entity.TargetBlockEntity;
 import com.tacz.guns.entity.EntityKineticBullet;
 import com.tacz.guns.init.ModBlocks;
@@ -8,6 +9,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
@@ -17,8 +19,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
@@ -35,8 +37,16 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
 public class TargetBlock extends BaseEntityBlock {
+    private static final MapCodec<TargetBlock> CODEC = simpleCodec(TargetBlock::new);
+
+    @Override
+    protected MapCodec<? extends TargetBlock> codec() {
+        return CODEC;
+    }
+
     public static final IntegerProperty OUTPUT_POWER = BlockStateProperties.POWER;
-    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+    // DirectionProperty sumiu como classe própria - HORIZONTAL_FACING agora é só EnumProperty<Direction>
+    public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final EnumProperty<DoubleBlockHalf> HALF = BlockStateProperties.DOUBLE_BLOCK_HALF;
     public static final BooleanProperty STAND = BooleanProperty.create("stand");
     public static final VoxelShape BOX_BOTTOM_STAND_X = Shapes.or(Block.box(6, 0, 6, 10, 16, 10), Block.box(6, 13, 2, 10, 16, 14));
@@ -46,8 +56,16 @@ public class TargetBlock extends BaseEntityBlock {
     public static final VoxelShape BOX_UPPER_Z = Block.box(2, 0, 6, 14, 16, 10);
 
     public TargetBlock() {
-        super(Properties.of().sound(SoundType.WOOD).strength(2.0F, 3.0F).noOcclusion().pushReaction(PushReaction.DESTROY));
+        this(defaultProperties());
+    }
+
+    public TargetBlock(Properties properties) {
+        super(properties);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(HALF, DoubleBlockHalf.LOWER).setValue(STAND, true).setValue(OUTPUT_POWER, 0));
+    }
+
+    public static Properties defaultProperties() {
+        return Properties.of().sound(SoundType.WOOD).strength(2.0F, 3.0F).noOcclusion().pushReaction(PushReaction.DESTROY);
     }
 
     public static int getRedstoneStrength(BlockHitResult hit, boolean isUpperBlock) {
@@ -123,11 +141,12 @@ public class TargetBlock extends BaseEntityBlock {
                 world.getBlockEntity(hit.getBlockPos().below(), TargetBlockEntity.TYPE).ifPresent(e -> e.hit(world, state, hit, true));
             }
 
-            if (!world.isClientSide() && projectile.getOwner() instanceof Player player && state.getValue(STAND)) {
+            // displayClientMessage saiu de Player - agora é sendSystemMessage, só em ServerPlayer
+            if (!world.isClientSide() && projectile.getOwner() instanceof ServerPlayer player && state.getValue(STAND)) {
                 if (projectile instanceof EntityKineticBullet bullet) {
                     String formattedDamage = String.format("%.1f", bullet.getDamage(hit.getLocation()));
                     String formattedDistance = String.format("%.2f", hit.getLocation().distanceTo(player.position()));
-                    player.displayClientMessage(Component.translatable("message.tacz.target_minecart.hit", formattedDamage, formattedDistance), true);
+                    player.sendSystemMessage(Component.translatable("message.tacz.target_minecart.hit", formattedDamage, formattedDistance), true);
                 }
 
             }
@@ -135,7 +154,7 @@ public class TargetBlock extends BaseEntityBlock {
     }
 
     @Override
-    public BlockState updateShape(BlockState state, Direction facing, BlockState facingState, LevelAccessor level, BlockPos currentPos, BlockPos facingPos) {
+    protected BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess scheduledTickAccess, BlockPos currentPos, Direction facing, BlockPos facingPos, BlockState facingState, RandomSource random) {
         DoubleBlockHalf half = state.getValue(HALF);
         boolean stand = state.getValue(STAND);
 
@@ -175,12 +194,12 @@ public class TargetBlock extends BaseEntityBlock {
     @Override
     public void setPlacedBy(Level world, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
         super.setPlacedBy(world, pos, state, placer, stack);
-        if (!world.isClientSide) {
+        if (!world.isClientSide()) {
             BlockPos above = pos.above();
             world.setBlock(above, state.setValue(HALF, DoubleBlockHalf.UPPER), Block.UPDATE_ALL);
-            world.blockUpdated(pos, Blocks.AIR);
+            world.updateNeighborsAt(pos, Blocks.AIR, null);
             state.updateNeighbourShapes(world, pos, Block.UPDATE_ALL);
-            if (stack.hasCustomHoverName()) {
+            if (stack.has(net.minecraft.core.component.DataComponents.CUSTOM_NAME)) {
                 BlockEntity blockentity = world.getBlockEntity(pos);
                 if (blockentity instanceof TargetBlockEntity e) {
                     GameProfile gameprofile = new GameProfile(null, stack.getHoverName().getString());
@@ -193,13 +212,17 @@ public class TargetBlock extends BaseEntityBlock {
     }
 
     @Override
-    public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
+    protected ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state, boolean includeData) {
         BlockPos blockPos = state.getValue(HALF) == DoubleBlockHalf.LOWER ? pos : pos.below();
         BlockEntity blockentity = level.getBlockEntity(blockPos);
-        if (blockentity instanceof TargetBlockEntity e) {
-            return new ItemStack(this).setHoverName(e.getCustomName());
+        if (includeData && blockentity instanceof TargetBlockEntity e) {
+            ItemStack stack = new ItemStack(this);
+            if (e.getCustomName() != null) {
+                stack.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, e.getCustomName());
+            }
+            return stack;
         }
-        return super.getCloneItemStack(level, pos, state);
+        return super.getCloneItemStack(level, pos, state, includeData);
     }
 
     @Override
@@ -233,6 +256,6 @@ public class TargetBlock extends BaseEntityBlock {
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.ENTITYBLOCK_ANIMATED;
+        return RenderShape.INVISIBLE; // ENTITYBLOCK_ANIMATED sumiu do enum (só sobrou INVISIBLE/MODEL) - o renderer de block entity roda de qualquer forma
     }
 }

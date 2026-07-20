@@ -1,30 +1,13 @@
 package com.tacz.guns.compat.zoomify;
 
-import cn.sh1rocu.simplebedrockmodel.api.event.ViewportEvent;
-import com.tacz.guns.GunMod;
-import dev.isxander.zoomify.Zoomify;
-import net.fabricmc.loader.api.FabricLoader;
-
+// Zoomify não tem build pra 26.2 ainda (ver build.gradle), então essa compat vira no-op:
+// tanto a dependência quanto o hook ViewportEvent dela (de simplebedrockmodel-fabric,
+// também sem build 26.2) estão indisponíveis.
 public class ZoomifyCompat {
-    private static final String MOD_ID = "zoomify";
-    private static boolean INSTALLED = false;
-
     public static void init() {
-        INSTALLED = FabricLoader.getInstance().isModLoaded(MOD_ID);
-        if (INSTALLED){
-            ViewportEvent.FOV.register(event -> event.setFOV(getFov(event.getFOV(), (float) event.getPartialTick())));
-        }
     }
 
     public static double getFov(double fov, float tickDelta) {
-        if (INSTALLED) {
-            try {
-                return fov / Zoomify.getZoomDivisor(tickDelta);
-            } catch (Exception e) {
-                GunMod.LOGGER.error("Error while getting Zoomify zoom divisor: " + e.getMessage());
-                return fov;
-            }
-        }
         return fov;
     }
 }

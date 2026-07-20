@@ -3,11 +3,10 @@ package com.tacz.guns.block.entity;
 import com.tacz.guns.api.DefaultAssets;
 import com.tacz.guns.init.ModBlocks;
 import com.tacz.guns.inventory.GunSmithTableMenu;
-import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
+import net.fabricmc.fabric.api.menu.v1.ExtendedMenuProvider;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -20,15 +19,18 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import org.jetbrains.annotations.Nullable;
 
-public class GunSmithTableBlockEntity extends BlockEntity implements ExtendedScreenHandlerFactory {
-    public static final BlockEntityType<GunSmithTableBlockEntity> TYPE = BlockEntityType.Builder.of(GunSmithTableBlockEntity::new,
+public class GunSmithTableBlockEntity extends BlockEntity implements ExtendedMenuProvider<Identifier> {
+    // BlockEntityType.Builder sumiu - construtor direto com Set<Block> no lugar dos varargs
+    public static final BlockEntityType<GunSmithTableBlockEntity> TYPE = new BlockEntityType<>(GunSmithTableBlockEntity::new, java.util.Set.of(
             ModBlocks.GUN_SMITH_TABLE,
             ModBlocks.WORKBENCH_111,
             ModBlocks.WORKBENCH_121,
             ModBlocks.WORKBENCH_211
-    ).build(null);
+    ));
 
     private static final String ID_TAG = "BlockId";
 
@@ -67,9 +69,8 @@ public class GunSmithTableBlockEntity extends BlockEntity implements ExtendedScr
     }
 
     @Override
-    public void writeScreenOpeningData(ServerPlayer serverPlayer, FriendlyByteBuf buf) {
-        Identifier rl = this.getId() == null ? DefaultAssets.DEFAULT_BLOCK_ID : this.getId();
-        buf.writeIdentifier(rl);
+    public Identifier getScreenOpeningData(ServerPlayer serverPlayer) {
+        return this.getId() == null ? DefaultAssets.DEFAULT_BLOCK_ID : this.getId();
     }
 
     @Nullable
@@ -79,25 +80,21 @@ public class GunSmithTableBlockEntity extends BlockEntity implements ExtendedScr
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        if (tag.contains(ID_TAG, Tag.TAG_STRING)) {
-            this.id = Identifier.tryParse(tag.getString(ID_TAG));
-        } else {
-            this.id = DefaultAssets.DEFAULT_BLOCK_ID;
-        }
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        this.id = input.getString(ID_TAG).map(Identifier::tryParse).orElse(DefaultAssets.DEFAULT_BLOCK_ID);
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
         if (id != null) {
-            tag.putString(ID_TAG, id.toString());
+            output.putString(ID_TAG, id.toString());
         }
     }
 
     @Override
-    public CompoundTag getUpdateTag() {
-        return saveWithoutMetadata();
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        return saveWithoutMetadata(registries);
     }
 }

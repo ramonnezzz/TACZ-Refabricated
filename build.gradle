@@ -12,6 +12,76 @@ plugins {
 version = project.mod_version
 group = project.maven_group
 
+// KubeJS e ModernKeyBinding (committee.nova.mkb) estão comentados nas dependências (ver abaixo)
+// porque ainda não têm build pra 26.2. O pacote compat/kubejs inteiro depende só dessas classes
+// ausentes, então excluímos ele da compilação até a lib publicar uma versão compatível.
+sourceSets {
+    main {
+        java {
+            exclude 'com/tacz/guns/compat/kubejs/**'
+            // Controllable também está comentado nas dependências (curse.maven:controllable), e
+            // ControllableInner depende dele + do ModernKeyBinding, ambos ausentes na 26.2
+            exclude 'com/tacz/guns/compat/controllable/ControllableInner.java'
+            // player-animation-lib também está comentado; só o pacote animation/ depende dela
+            // diretamente (PlayerAnimatorCompat vira um wrapper no-op, ver a classe)
+            exclude 'com/tacz/guns/compat/playeranimator/animation/**'
+            // simplebedrockmodel-fabric está travada em mc1.20.1 (ver gradle.properties) - o
+            // renderer de arma em primeira/terceira pessoa inteiro é construído em cima dela,
+            // então esses dois arquivos ficam sem substituto até a lib publicar build pra 26.2.
+            // Os pontos de uso externos foram neutralizados (ver os respectivos arquivos).
+            exclude 'com/tacz/guns/client/renderer/item/AnimateGeoItemRenderer.java'
+            exclude 'com/tacz/guns/client/renderer/item/GunItemRendererWrapper.java'
+            // Só usada pelo RenderHandEvent (cn.sh1rocu.simplebedrockmodel) e nunca mais
+            // registrada em nenhum lugar (ver TaCZFabricClient) - inútil sem a lib
+            exclude 'com/tacz/guns/client/event/FirstPersonRenderEvent.java'
+            // BuiltinItemRendererRegistry (Fabric) sumiu de vez na 26.2 - o registro de
+            // renderer 3D custom de item virou o sistema SpecialModelRenderer da vanilla, que
+            // exige também mudanças nos JSONs de item model (não só Java). Fica pra uma
+            // passada dedicada depois; por ora os 3 renderers de item ficam sem uso.
+            exclude 'com/tacz/guns/client/renderer/item/AmmoItemRenderer.java'
+            exclude 'com/tacz/guns/client/renderer/item/AttachmentItemRenderer.java'
+            exclude 'com/tacz/guns/client/renderer/item/GunSmithTableItemRenderer.java'
+            // AcceleratedRendering (AR) também sem build pra 26.2 (ver dependencies abaixo).
+            // ARCompat.java virou um wrapper sempre-desligado (ARCompatImpl agora é stub sem as
+            // classes reais da AR); esses arquivos ainda referenciam a API real da AR e ficam de
+            // fora. O mixin config dela foi removido do fabric.mod.json também.
+            exclude 'com/tacz/guns/compat/ar/AcceleratedBeamRenderer.java'
+            exclude 'com/tacz/guns/compat/ar/BeamRenderContext.java'
+            exclude 'com/tacz/guns/mixin/client/ar/BedrockPartMixin.java'
+            // Carry On também está comentado nas dependências - removido também da lista de
+            // mixins em tacz.fabric.mixins.json (senão o Mixin falha procurando a classe)
+            exclude 'com/tacz/guns/compat/carryon/BlackList.java'
+            exclude 'cn/sh1rocu/tacz/mixin/compat/carryon/ConfigLoaderMixin.java'
+            // Explosion virou uma interface pura na 26.2 (a lógica real foi pra ServerExplosion,
+            // um único método explode() opaco, sem a estrutura antiga de finalizeExplosion()
+            // iterando bloco a bloco com profiler.pop() que esse mixin injetava em cima). Sem
+            // decompilar o bytecode de ServerExplosion não dá pra achar um ponto de injeção
+            // equivalente - IBlockExtension#tacz$onBlockExploded (ex: StatueBlockEntity soltando
+            // o item ao explodir) fica sem funcionar por ora.
+            exclude 'cn/sh1rocu/tacz/mixin/common/ExplosionMixin.java'
+            // Type.RIDEABLE sumiu (virou boolean isRideable() direto) - o bloqueio de montaria
+            // agora é feito só via TargetMinecart#isRideable(), ver o comentário lá. Esse mixin
+            // genérico (interceptava a expressão "getMinecartType() == RIDEABLE" dentro do
+            // tick() da vanilla) ficou obsoleto e foi removido de tacz.fabric.mixins.json.
+            exclude 'cn/sh1rocu/tacz/mixin/common/AbstractMinecartMixin.java'
+            // Mesma expressão quebrada (getMinecartType()==RIDEABLE) que AbstractMinecartMixin,
+            // só que injetada num método de ArmorStand - provavelmente parte do mesmo mecanismo
+            // de bloqueio de montaria em algum caminho de interação genérico da vanilla. Como
+            // "required":true faz o mixin config inteiro falhar se qualquer um não aplicar,
+            // desativa também em vez de arriscar quebrar o carregamento do mod inteiro.
+            exclude 'cn/sh1rocu/tacz/mixin/common/ArmorStandMixin.java'
+            // ShoulderSurfing também sem build pra 26.2 - ShoulderSurfingCompatInner virou stub
+            // sem a API real dele (ver a classe); o Plugin (ServiceLoader) fica de fora
+            exclude 'com/tacz/guns/compat/shouldersurfing/ShoulderSurfingPlugin.java'
+            // Sem chamador nenhum sobrando (a máscara de stencil da lente de mira que isso
+            // alimentava já tinha sido removida antes, ver BedrockAttachmentModel) - GL calls
+            // internos (_texImage2D/_glFramebufferTexture2D) também mudaram de assinatura.
+            // Morto de qualquer jeito, exclui em vez de portar bytecode-level GL hooks pra nada.
+            exclude 'cn/sh1rocu/tacz/mixin/client/RenderTargetMixin.java'
+        }
+    }
+}
+
 base {
     archivesName = "${archives_base_name}-${minecraft_version}"
 }
@@ -180,7 +250,11 @@ dependencies {
 
     // modCompileOnly "dev.latvian.mods:kubejs-fabric:${kubejs_version}"
     // modCompileOnly "dev.latvian.mods:rhino-fabric:${rhino_version}"
-    // modCompileOnly "dev.architectury:architectury-fabric:${architectury_version}"
+    // Só compileOnly: REI referencia dev.architectury.fluid.FluidStack na assinatura de
+    // EntryStacks.of(...) (overload de fluido, que a gente não chama) - sem essa dependência no
+    // classpath de compilação, javac falha resolvendo TODOS os overloads do método, mesmo os que
+    // não usam FluidStack. Não precisamos dela em runtime.
+    compileOnly "dev.architectury:architectury-fabric:21.0.2"
 
     // CCA — não tem sufixo de versão do MC no coordinate, mas mexe com registries/Mixins
     // internos que provavelmente quebraram entre 1.20.1 e 26.2. Comentado por segurança.
@@ -191,7 +265,7 @@ dependencies {
     // modImplementation(include("maven.modrinth:modernkeybinding:1.20.X-1.2.0"))
 
     // Sem ofuscação em 26.2 (ver comentário acima), não há infraestrutura mod* — usa implementation normal
-    implementation "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:8.0.2"
+    implementation "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:26.2.1"
 
     implementation("com.terraformersmc:modmenu:20.0.1")
 
@@ -239,7 +313,7 @@ java {
 
 jar {
     from("LICENSE") {
-        rename { "${it}_${project.archivesBaseName}" }
+        rename { "${it}_${base.archivesName.get()}" }
     }
 }
 

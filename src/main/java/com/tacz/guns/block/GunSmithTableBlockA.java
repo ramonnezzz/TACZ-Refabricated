@@ -1,5 +1,6 @@
 package com.tacz.guns.block;
 
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -9,6 +10,21 @@ import net.minecraft.world.level.block.state.BlockState;
  * 单方块的枪械工作台
  */
 public class GunSmithTableBlockA extends AbstractGunSmithTableBlock {
+    private static final MapCodec<GunSmithTableBlockA> CODEC = simpleCodec(GunSmithTableBlockA::new);
+
+    @Override
+    protected MapCodec<? extends GunSmithTableBlockA> codec() {
+        return CODEC;
+    }
+
+    public GunSmithTableBlockA() {
+        this(defaultProperties());
+    }
+
+    public GunSmithTableBlockA(Properties properties) {
+        super(properties);
+    }
+
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         Direction direction = context.getHorizontalDirection().getOpposite();

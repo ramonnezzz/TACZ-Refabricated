@@ -1,6 +1,5 @@
 package com.tacz.guns.client.event;
 
-import cn.sh1rocu.simplebedrockmodel.api.event.RenderTickEvent;
 import com.mojang.blaze3d.platform.Window;
 import com.tacz.guns.GunMod;
 import com.tacz.guns.api.TimelessAPI;
@@ -69,7 +68,7 @@ public class RenderCrosshairEvent {
         IClientPlayerGunOperator playerGunOperator = IClientPlayerGunOperator.fromLocalPlayer(player);
         TimelessAPI.getGunDisplay(stack).ifPresent(gunIndex -> {
             // 瞄准快要完成时，取消准心渲染
-            if (playerGunOperator.getClientAimingProgress(Minecraft.getInstance().getFrameTime()) > 0.9) {
+            if (playerGunOperator.getClientAimingProgress(Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false)) > 0.9) {
                 // 枪包可以强制显示准星
                 boolean forceShow = gunIndex.isShowCrosshair();
                 // 越肩视角可以强制显示准星
@@ -92,9 +91,9 @@ public class RenderCrosshairEvent {
         });
     }
 
-    public static void onRenderTick(RenderTickEvent event) {
+    public static void onRenderTick(Minecraft client) {
         // 奇迹的是，RenderGameOverlayEvent.PreLayer 事件中，screen 还未被赋值...
-        isRefitScreen = Minecraft.getInstance().screen instanceof GunRefitScreen;
+        isRefitScreen = Minecraft.getInstance().gui.screen() instanceof GunRefitScreen;
     }
 
     private static void renderCrosshair(GuiGraphicsExtractor graphics, Window window) {
@@ -104,7 +103,7 @@ public class RenderCrosshairEvent {
         if (!options.getCameraType().isFirstPerson() && !shoulderSurfingForceShow) {
             return;
         }
-        if (options.hideGui) {
+        if (Minecraft.getInstance().gui.hud.isHidden()) {
             return;
         }
         MultiPlayerGameMode gameMode = Minecraft.getInstance().gameMode;

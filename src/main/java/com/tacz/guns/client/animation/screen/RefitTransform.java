@@ -1,6 +1,5 @@
 package com.tacz.guns.client.animation.screen;
 
-import cn.sh1rocu.simplebedrockmodel.api.event.RenderTickEvent;
 import com.tacz.guns.api.item.attachment.AttachmentType;
 import com.tacz.guns.client.gui.GunRefitScreen;
 import net.fabricmc.api.EnvType;
@@ -57,12 +56,12 @@ public class RefitTransform {
         return true;
     }
 
-    public static void tickInterpolation(RenderTickEvent event) {
+    public static void tickInterpolation(Minecraft client) {
         // tick opening progress
         if (refitScreenOpeningTimestamp == -1) {
             refitScreenOpeningTimestamp = System.currentTimeMillis();
         }
-        if (Minecraft.getInstance().screen instanceof GunRefitScreen) {
+        if (Minecraft.getInstance().gui.screen() instanceof GunRefitScreen) {
             refitScreenOpeningProgress += (System.currentTimeMillis() - refitScreenOpeningTimestamp) / (REFIT_SCREEN_TRANSFORM_TIMES * 1000);
             if (refitScreenOpeningProgress > 1) {
                 refitScreenOpeningProgress = 1;

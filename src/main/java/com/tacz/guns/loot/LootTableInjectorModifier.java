@@ -1,38 +1,29 @@
 package com.tacz.guns.loot;
 
-import cn.sh1rocu.tacz.mixin.accessor.LootManagerAccessor;
 import com.tacz.guns.resource.CommonAssetsManager;
 import com.tacz.guns.resource.pojo.data.loot.LootTableInjection;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.fabricmc.fabric.api.loot.v2.LootTableEvents;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.storage.loot.LootContext;
+import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class LootTableInjectorModifier {
-    private static final Map<LootTable, Identifier> ID_CACHE = new HashMap<>();
-
-    public static @NotNull ObjectArrayList<ItemStack> doApply(ObjectArrayList<ItemStack> generatedLoot, LootContext context, LootTable table) {
+    // LootDataManager/LootDataId sumiram na 26.2 - loot tables agora são um Registry<LootTable>
+    // de verdade (Registries.LOOT_TABLE), então dá pra pegar o id direto via getKey() em vez do
+    // hack antigo de mixin acessando o mapa interno do gerenciador (ver LootManagerAccessor,
+    // removido)
+    public static @NotNull ObjectArrayList<ItemStack> doApply(ObjectArrayList<ItemStack> generatedLoot, LootParams params, LootTable table) {
         CommonAssetsManager manager = CommonAssetsManager.getInstance();
         if (manager == null) {
             return generatedLoot;
         }
 
-        Identifier lootTableId = ID_CACHE.computeIfAbsent(
-                table, lootTable -> ((LootManagerAccessor) context.getLevel().getServer().getLootData()).tacz$elements()
-                        .entrySet()
-                        .stream()
-                        .filter(entry -> lootTable.equals(entry.getValue()))
-                        .map(key -> key.getKey().location())
-                        .findFirst()
-                        .orElse(null)
-        );
+        Identifier lootTableId = params.getLevel().registryAccess().lookupOrThrow(Registries.LOOT_TABLE).getKey(table);
         if (lootTableId == null) {
             return generatedLoot;
         }
@@ -43,7 +34,7 @@ public class LootTableInjectorModifier {
         }
 
         for (LootTableInjection injection : injections) {
-            generatedLoot.addAll(injection.createStacks(context));
+            generatedLoot.addAll(injection.createStacks(params));
         }
         return generatedLoot;
     }

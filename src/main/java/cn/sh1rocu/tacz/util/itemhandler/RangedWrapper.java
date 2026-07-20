@@ -1,9 +1,12 @@
 package cn.sh1rocu.tacz.util.itemhandler;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
+import net.minecraft.resources.RegistryOps;
 import net.minecraft.world.item.ItemStack;
 
 public class RangedWrapper implements IItemHandlerModifiable {
@@ -79,13 +82,22 @@ public class RangedWrapper implements IItemHandlerModifiable {
         return localSlot + minSlot < maxSlot;
     }
 
+    // ItemStack.save(CompoundTag)/ItemStack.of(CompoundTag) saíram da API; a serialização de
+    // ItemStack agora é feita via codec (precisa de um RegistryOps). Não há caller pra este
+    // método hoje, então RegistryAccess.EMPTY é suficiente aqui.
     public CompoundTag serializeNBT() {
+        RegistryOps<Tag> ops = RegistryOps.create(NbtOps.INSTANCE, RegistryAccess.EMPTY);
         ListTag nbtTagList = new ListTag();
         for (int i = 0; i < getSlots(); i++) {
-            if (!getStackInSlot(i).isEmpty()) {
-                CompoundTag itemTag = new CompoundTag();
-                itemTag.putInt("Slot", i);
-                nbtTagList.add(getStackInSlot(i).save(itemTag));
+            ItemStack stack = getStackInSlot(i);
+            if (!stack.isEmpty()) {
+                int slot = i;
+                ItemStack.CODEC.encodeStart(ops, stack).resultOrPartial().ifPresent(encoded -> {
+                    CompoundTag itemTag = new CompoundTag();
+                    itemTag.merge((CompoundTag) encoded);
+                    itemTag.putInt("Slot", slot);
+                    nbtTagList.add(itemTag);
+                });
             }
         }
         CompoundTag nbt = new CompoundTag();
@@ -95,14 +107,15 @@ public class RangedWrapper implements IItemHandlerModifiable {
     }
 
     public void deserializeNBT(CompoundTag nbt) {
-        int size = nbt.contains("Size", Tag.TAG_INT) ? nbt.getInt("Size") : getSlots();
-        ListTag tagList = nbt.getList("Items", Tag.TAG_COMPOUND);
+        RegistryOps<Tag> ops = RegistryOps.create(NbtOps.INSTANCE, RegistryAccess.EMPTY);
+        int size = nbt.contains("Size") ? nbt.getIntOr("Size", getSlots()) : getSlots();
+        ListTag tagList = nbt.getListOrEmpty("Items");
         for (int i = 0; i < tagList.size(); i++) {
-            CompoundTag itemTags = tagList.getCompound(i);
-            int slot = itemTags.getInt("Slot");
+            CompoundTag itemTags = tagList.getCompoundOrEmpty(i);
+            int slot = itemTags.getIntOr("Slot", -1);
 
             if (slot >= 0 && slot < size) {
-                setStackInSlot(slot, ItemStack.of(itemTags));
+                ItemStack.CODEC.parse(ops, itemTags).resultOrPartial().ifPresent(stack -> setStackInSlot(slot, stack));
             }
         }
     }

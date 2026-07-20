@@ -6,33 +6,34 @@ import com.tacz.guns.api.item.IAttachment;
 import com.tacz.guns.api.item.attachment.AttachmentType;
 import com.tacz.guns.api.item.builder.AttachmentItemBuilder;
 import com.tacz.guns.api.item.nbt.AttachmentItemDataAccessor;
-import com.tacz.guns.client.renderer.item.AttachmentItemRenderer;
 import com.tacz.guns.client.resource.index.ClientAttachmentIndex;
 import com.tacz.guns.inventory.tooltip.AttachmentItemTooltip;
 import com.tacz.guns.resource.index.CommonAttachmentIndex;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
-import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.NonNullList;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.tacz.guns.util.datafixer.AttachmentIdFix.updateAttachmentIdInTag;
-
 public class AttachmentItem extends Item implements AttachmentItemDataAccessor, IItem {
     public AttachmentItem() {
-        super(new Properties().stacksTo(1));
+        this(defaultProperties());
+    }
+
+    public AttachmentItem(Properties properties) {
+        super(properties);
+    }
+
+    public static Properties defaultProperties() {
+        return new Properties().stacksTo(1);
     }
 
     @Override
@@ -65,12 +66,6 @@ public class AttachmentItem extends Item implements AttachmentItemDataAccessor, 
         return stacks;
     }
 
-    @Environment(EnvType.CLIENT)
-    @Override
-    public BuiltinItemRendererRegistry.DynamicItemRenderer getCustomRenderer() {
-        return AttachmentItemRenderer.INSTANCE.get();
-    }
-
     @Override
     @Nonnull
     public AttachmentType getType(ItemStack attachmentStack) {
@@ -88,8 +83,8 @@ public class AttachmentItem extends Item implements AttachmentItemDataAccessor, 
         return Optional.of(new AttachmentItemTooltip(this.getAttachmentId(stack), this.getType(stack), stack));
     }
 
-    @Override
-    public void verifyTagAfterLoad(@NotNull CompoundTag tag) {
-        updateAttachmentIdInTag(tag);
-    }
+    // verifyTagAfterLoad era um hook Forge que nunca existiu de verdade no lado Fabric (não
+    // compilava como @Override de nada aqui) - o fixup de ID antigo (updateAttachmentIdInTag)
+    // fica sem chamador por ora; precisa de um ponto de entrada real (ex: no load do
+    // DataComponents.CUSTOM_DATA do attachment) pra voltar a rodar
 }

@@ -49,7 +49,7 @@ import java.util.function.Consumer;
 public class CommonAssetsManager implements ICommonResourceProvider {
     private static CommonAssetsManager INSTANCE;
     public static final Gson GSON = new GsonBuilder()
-            .registerTypeAdapter(Identifier.class, new Identifier.Serializer())
+            .registerTypeAdapter(Identifier.class, new IdentifierSerializer())
             .registerTypeAdapter(Pair.class, new PairSerializer())
             .registerTypeAdapter(GunSmithTableIngredient.class, new GunSmithTableIngredientSerializer())
             .registerTypeAdapter(GunSmithTableResult.class, new GunSmithTableResultSerializer())
@@ -96,7 +96,7 @@ public class CommonAssetsManager implements ICommonResourceProvider {
         blockIndex = register(new CommonDataManager<>(DataType.BLOCK_INDEX, CommonBlockIndex.class, GSON, "index/blocks", "BlockIndexLoader"));
 
         listeners.forEach(register);
-        register.accept((barrier, resourceManager, preparationProfiler, reloadProfiler, backgroundExecutor, gameExecutor) -> {
+        register.accept((state, backgroundExecutor, barrier, gameExecutor) -> {
             return barrier
                     .wait(Void.TYPE)
                     .thenRunAsync(AllowAttachmentTagMatcher::resetCache, gameExecutor);
@@ -267,7 +267,7 @@ public class CommonAssetsManager implements ICommonResourceProvider {
         }
         ServerMessageSyncGunPack message = new ServerMessageSyncGunPack(getInstance().getNetworkCache());
         NetworkHandler.sendToClientPlayer(message, player);
-
+        com.tacz.guns.init.ModRecipe.syncGunSmithTableRecipesToPlayer(player, player.level().recipeAccess());
     }
 
     public static void reloadAllPack() {

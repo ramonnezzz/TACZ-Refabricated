@@ -9,13 +9,15 @@ import com.tacz.guns.init.ModItems;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 
 import java.util.List;
 
 public class TooltipEvent {
-    public static void onTooltip(ItemStack stack, TooltipFlag context, List<Component> lines) {
+    // ItemTooltipCallback ganhou um Item.TooltipContext extra (não usado aqui)
+    public static void onTooltip(ItemStack stack, Item.TooltipContext tooltipContext, TooltipFlag context, List<Component> lines) {
         if (context.isAdvanced() && RenderConfig.ENABLE_TACZ_ID_IN_TOOLTIP.get()) {
             if (stack.getItem() instanceof GunItemDataAccessor item) {
                 lines.add(formatTooltip(GunItemDataAccessor.GUN_ID_TAG, item.getGunId(stack)));

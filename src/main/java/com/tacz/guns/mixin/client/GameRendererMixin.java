@@ -4,17 +4,18 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.tacz.guns.api.client.event.RenderItemInHandBobEvent;
 import com.tacz.guns.api.client.event.RenderLevelBobEvent;
 import com.tacz.guns.client.renderer.other.GunHurtBobTweak;
-import net.minecraft.client.Camera;
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(GameRenderer.class)
 public abstract class GameRendererMixin {
@@ -22,15 +23,16 @@ public abstract class GameRendererMixin {
     private boolean tacz$useFovSetting;
 
     @Shadow
-    public abstract Minecraft getMinecraft();
+    @Final
+    private Minecraft minecraft;
 
-    @Shadow
-    public abstract void render(float pPartialTicks, long pNanoTime, boolean pRenderLevel);
-
+    // bobHurt/bobView perderam o parâmetro float partialTicks (agora só CameraRenderState +
+    // PoseStack) - usa o DeltaTracker direto, igual outros pontos já portados nessa base
     @Inject(method = "bobHurt", at = @At("HEAD"), cancellable = true)
-    public void onBobHurt(PoseStack pMatrixStack, float pPartialTicks, CallbackInfo ci) {
+    public void onBobHurt(CameraRenderState cameraRenderState, PoseStack pMatrixStack, CallbackInfo ci) {
+        float pPartialTicks = Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(true);
         // 取消受伤导致的视角摇晃
-        if (this.getMinecraft().getCameraEntity() instanceof LocalPlayer player && !player.isDeadOrDying()) {
+        if (this.minecraft.getCameraEntity() instanceof LocalPlayer player && !player.isDeadOrDying()) {
             if (GunHurtBobTweak.onHurtBobTweak(player, pMatrixStack, pPartialTicks)) {
                 ci.cancel();
                 return;
@@ -53,7 +55,7 @@ public abstract class GameRendererMixin {
     }
 
     @Inject(method = "bobView", at = @At("HEAD"), cancellable = true)
-    public void onBobView(PoseStack pMatrixStack, float pPartialTicks, CallbackInfo ci) {
+    public void onBobView(CameraRenderState cameraRenderState, PoseStack pMatrixStack, CallbackInfo ci) {
         boolean cancel;
         if (!tacz$useFovSetting) {
             var event = new RenderItemInHandBobEvent.BobView();
@@ -69,13 +71,17 @@ public abstract class GameRendererMixin {
         }
     }
 
-    /**
-     * 是一个 hack 实现。因为 getFov 这个方法只有在构建 投影矩阵 的时候调用。
-     * 因此可以根据 getFov 中的 pUseFovSetting 来判断当前准备渲染 Level 还是渲染 HandWithItem 。
-     * 至于为什么不直接对 renderItemInHand 这个方法 mixin ，是因为安装了 Optifine 之后，这个方法的内容被大幅度修改了。
-     */
-    @Inject(method = "getFov", at = @At("HEAD"))
-    public void switchRenderType(Camera pActiveRenderInfo, float pPartialTicks, boolean pUseFOVSetting, CallbackInfoReturnable<Double> cir) {
-        this.tacz$useFovSetting = pUseFOVSetting;
+    // getFov() sumiu (o hack antigo dependia dele pra distinguir contexto de render Level vs
+    // HandWithItem). O ponto onde bobHurt/bobView são chamados AGORA já é diretamente
+    // renderItemInHand() ou renderLevel() - marca o contexto direto neles, mais robusto que o
+    // hack antigo baseado em getFov
+    @Inject(method = "renderItemInHand", at = @At("HEAD"))
+    public void tacz$markItemInHandRender(CameraRenderState cameraRenderState, float partialTick, org.joml.Matrix4fc matrix4fc, CallbackInfo ci) {
+        this.tacz$useFovSetting = false;
+    }
+
+    @Inject(method = "renderLevel", at = @At("HEAD"))
+    public void tacz$markLevelRender(DeltaTracker deltaTracker, CallbackInfo ci) {
+        this.tacz$useFovSetting = true;
     }
 }

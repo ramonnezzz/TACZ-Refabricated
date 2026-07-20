@@ -1,48 +1,51 @@
 package com.tacz.guns.compat.jei;
 
 import com.tacz.guns.api.item.*;
-import mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter;
+import mezz.jei.api.ingredients.subtypes.ISubtypeInterpreter;
 import net.minecraft.world.item.ItemStack;
 
+// IIngredientSubtypeInterpreter (com IIngredientSubtypeInterpreter.NONE) virou
+// ISubtypeInterpreter<T>#getSubtypeData(T, UidContext), que devolve Object (não mais só String)
+// e usa null em vez do sentinel NONE pra "sem subtype"
 public class GunModSubtype {
-    public static IIngredientSubtypeInterpreter<ItemStack> getAmmoSubtype() {
+    public static ISubtypeInterpreter<ItemStack> getAmmoSubtype() {
         return (stack, context) -> {
             if (stack.getItem() instanceof IAmmo iAmmo) {
                 return iAmmo.getAmmoId(stack).toString();
             }
-            return IIngredientSubtypeInterpreter.NONE;
+            return null;
         };
     }
 
-    public static IIngredientSubtypeInterpreter<ItemStack> getGunSubtype() {
+    public static ISubtypeInterpreter<ItemStack> getGunSubtype() {
         return (stack, context) -> {
             if (stack.getItem() instanceof IGun iGun) {
                 return iGun.getGunId(stack).toString();
             }
-            return IIngredientSubtypeInterpreter.NONE;
+            return null;
         };
     }
 
-    public static IIngredientSubtypeInterpreter<ItemStack> getAttachmentSubtype() {
+    public static ISubtypeInterpreter<ItemStack> getAttachmentSubtype() {
         return (stack, context) -> {
             if (stack.getItem() instanceof IAttachment iAttachment) {
                 return iAttachment.getAttachmentId(stack).toString();
             }
-            return IIngredientSubtypeInterpreter.NONE;
+            return null;
         };
     }
 
-    public static IIngredientSubtypeInterpreter<ItemStack> getTableSubType() {
+    public static ISubtypeInterpreter<ItemStack> getTableSubType() {
         return (stack, context) -> {
             if (stack.getItem() instanceof IBlock iBlock) {
                 return iBlock.getBlockId(stack).toString();
             }
-            return IIngredientSubtypeInterpreter.NONE;
+            return null;
         };
     }
 
 
-    public static IIngredientSubtypeInterpreter<ItemStack> getAmmoBoxSubtype() {
+    public static ISubtypeInterpreter<ItemStack> getAmmoBoxSubtype() {
         return (stack, context) -> {
             if (stack.getItem() instanceof IAmmoBox iAmmoBox) {
                 if (iAmmoBox.isAllTypeCreative(stack)) {
@@ -53,7 +56,7 @@ public class GunModSubtype {
                 }
                 return String.format("level_%d", iAmmoBox.getAmmoLevel(stack));
             }
-            return IIngredientSubtypeInterpreter.NONE;
+            return null;
         };
     }
 }

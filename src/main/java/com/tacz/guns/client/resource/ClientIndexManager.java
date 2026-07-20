@@ -1,6 +1,5 @@
 package com.tacz.guns.client.resource;
 
-import com.github.mcmodderanchor.simplebedrockmodel.v1.client.handler.FirstPersonRenderHandler;
 import com.google.common.collect.Maps;
 import com.tacz.guns.GunMod;
 import com.tacz.guns.api.TimelessAPI;
@@ -60,7 +59,7 @@ public class ClientIndexManager {
 
             // 自动切一次枪，以便刷新状态机
             IClientPlayerGunOperator.fromLocalPlayer(player).draw(ItemStack.EMPTY);
-            FirstPersonRenderHandler.reset();
+            // FirstPersonRenderHandler.reset() removido: simplebedrockmodel-fabric sem build 26.2
         }
     }
 
@@ -178,7 +177,7 @@ public class ClientIndexManager {
     }
 
     private static void warmUpHotbarModels(LocalPlayer player) {
-        var items = player.getInventory().items;
+        var items = player.getInventory().getNonEquipmentItems();
         int hotbarSize = Math.min(HOTBAR_SLOT_COUNT, items.size());
         for (int i = 0; i < hotbarSize; i++) {
             warmUpItemModel(items.get(i));
@@ -186,7 +185,7 @@ public class ClientIndexManager {
     }
 
     private static void warmUpBackpackModels(LocalPlayer player) {
-        var items = player.getInventory().items;
+        var items = player.getInventory().getNonEquipmentItems();
         for (int i = Math.min(HOTBAR_SLOT_COUNT, items.size()); i < items.size(); i++) {
             warmUpItemModel(items.get(i));
         }

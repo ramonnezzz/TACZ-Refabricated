@@ -1,17 +1,18 @@
 package cn.sh1rocu.tacz.util.forge;
 
-import com.google.gson.JsonObject;
+import com.mojang.serialization.MapCodec;
 import net.fabricmc.fabric.api.recipe.v1.ingredient.CustomIngredient;
 import net.fabricmc.fabric.api.recipe.v1.ingredient.CustomIngredientSerializer;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 public class StrictNBTIngredient implements CustomIngredient {
@@ -37,17 +38,12 @@ public class StrictNBTIngredient implements CustomIngredient {
     }
 
     private static boolean areShareTagsEqual(ItemStack stack, ItemStack other) {
-        CompoundTag shareTagA = stack.getTag();
-        CompoundTag shareTagB = other.getTag();
-        if (shareTagA == null)
-            return shareTagB == null;
-        else
-            return shareTagB != null && shareTagA.equals(shareTagB);
+        return Objects.equals(stack.get(DataComponents.CUSTOM_DATA), other.get(DataComponents.CUSTOM_DATA));
     }
 
     @Override
-    public List<ItemStack> getMatchingStacks() {
-        return Stream.of(stack).toList();
+    public Stream<Holder<Item>> items() {
+        return Stream.of(stack.getItem().builtInRegistryHolder());
     }
 
     @Override
@@ -65,33 +61,24 @@ public class StrictNBTIngredient implements CustomIngredient {
     public static class Serializer implements CustomIngredientSerializer<StrictNBTIngredient> {
         public static final Serializer INSTANCE = new Serializer();
 
+        public static final MapCodec<StrictNBTIngredient> CODEC = ItemStack.MAP_CODEC.xmap(StrictNBTIngredient::new, i -> i.stack);
+
+        public static final StreamCodec<RegistryFriendlyByteBuf, StrictNBTIngredient> STREAM_CODEC =
+                ItemStack.OPTIONAL_STREAM_CODEC.map(StrictNBTIngredient::new, i -> i.stack);
+
         @Override
         public Identifier getIdentifier() {
             return ID;
         }
 
         @Override
-        public StrictNBTIngredient read(JsonObject json) {
-            return new StrictNBTIngredient(CraftingHelper.getItemStack(json, true));
+        public MapCodec<StrictNBTIngredient> getCodec() {
+            return CODEC;
         }
 
         @Override
-        public void write(JsonObject json, StrictNBTIngredient ingredient) {
-            json.addProperty("type", ID.toString());
-            json.addProperty("item", BuiltInRegistries.ITEM.getKey(ingredient.stack.getItem()).toString());
-            json.addProperty("count", ingredient.stack.getCount());
-            if (ingredient.stack.hasTag())
-                json.addProperty("nbt", ingredient.stack.getTag().toString());
-        }
-
-        @Override
-        public StrictNBTIngredient read(FriendlyByteBuf buffer) {
-            return new StrictNBTIngredient(ItemStack.OPTIONAL_STREAM_CODEC.decode((RegistryFriendlyByteBuf) buffer));
-        }
-
-        @Override
-        public void write(FriendlyByteBuf buffer, StrictNBTIngredient ingredient) {
-            ItemStack.OPTIONAL_STREAM_CODEC.encode((RegistryFriendlyByteBuf) buffer, ingredient.stack);
+        public StreamCodec<RegistryFriendlyByteBuf, StrictNBTIngredient> getStreamCodec() {
+            return STREAM_CODEC;
         }
     }
 }

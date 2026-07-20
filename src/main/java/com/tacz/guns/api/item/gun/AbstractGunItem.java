@@ -10,7 +10,6 @@ import com.tacz.guns.api.item.*;
 import com.tacz.guns.api.item.attachment.AttachmentType;
 import com.tacz.guns.api.item.builder.AmmoItemBuilder;
 import com.tacz.guns.api.item.builder.GunItemBuilder;
-import com.tacz.guns.client.renderer.item.GunItemRendererWrapper;
 import com.tacz.guns.client.resource.index.ClientGunIndex;
 import com.tacz.guns.entity.shooter.ShooterDataHolder;
 import com.tacz.guns.inventory.tooltip.GunTooltip;
@@ -21,7 +20,6 @@ import com.tacz.guns.util.AllowAttachmentTagMatcher;
 import com.tacz.guns.util.AttachmentDataUtils;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -150,7 +148,7 @@ public abstract class AbstractGunItem extends Item implements IGun, IAnimationIt
             return getDummyAmmoAmount(gunItem) > 0;
         }
         // 检查背包内的弹药数量
-        return shooter.tacz$getItemHandler(null).map(cap -> {
+        return ((cn.sh1rocu.tacz.api.mixin.ItemHandlerCapability) shooter).tacz$getItemHandler(null).map(cap -> {
             // 背包检查
             for (int i = 0; i < cap.getSlots(); i++) {
                 ItemStack checkAmmoStack = cap.getStackInSlot(i);
@@ -368,12 +366,6 @@ public abstract class AbstractGunItem extends Item implements IGun, IAnimationIt
         return true;
     }
 
-    @Override
-    @Environment(EnvType.CLIENT)
-    public BuiltinItemRendererRegistry.DynamicItemRenderer getCustomRenderer() {
-        return GunItemRendererWrapper.INSTANCE.get();
-    }
-
     /**
      * 获取在 Tooltip 中渲染的图片
      */
@@ -432,7 +424,7 @@ public abstract class AbstractGunItem extends Item implements IGun, IAnimationIt
             return getDummyAmmoAmount(gun) > 0;
         }
         // 检查背包内的弹药数量
-        return shooter.tacz$getItemHandler(null).map(cap -> {
+        return ((cn.sh1rocu.tacz.api.mixin.ItemHandlerCapability) shooter).tacz$getItemHandler(null).map(cap -> {
             // 背包检查
             for (int i = 0; i < cap.getSlots(); i++) {
                 ItemStack checkAmmoStack = cap.getStackInSlot(i);

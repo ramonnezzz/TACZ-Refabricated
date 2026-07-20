@@ -10,7 +10,7 @@ import com.tacz.guns.network.message.ServerMessageCraft;
 import com.tacz.guns.resource.filter.RecipeFilter;
 import com.tacz.guns.resource.index.CommonBlockIndex;
 import it.unimi.dsi.fastutil.ints.Int2IntArrayMap;
-import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
+import net.fabricmc.fabric.api.menu.v1.ExtendedMenuType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -30,10 +30,13 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 public class GunSmithTableMenu extends AbstractContainerMenu {
-    public static final MenuType<GunSmithTableMenu> TYPE = new ExtendedScreenHandlerType<>((windowId, inv, data) -> {
-        Identifier blockId = data.readIdentifier();
-        return new GunSmithTableMenu(windowId, inv, blockId);
-    });
+    // fabric-screen-handler-api-v1 (ExtendedScreenHandlerType) foi substituído por
+    // fabric-menu-api-v1 (ExtendedMenuType) na 26.2 - o payload agora é tipado (Identifier) com
+    // seu próprio StreamCodec, em vez de ler um FriendlyByteBuf cru
+    public static final ExtendedMenuType<GunSmithTableMenu, Identifier> TYPE = new ExtendedMenuType<>(
+            (windowId, inv, blockId) -> new GunSmithTableMenu(windowId, inv, blockId),
+            Identifier.STREAM_CODEC
+    );
 
     private final Identifier blockId;
     private final RecipeFilter filter;
@@ -70,8 +73,8 @@ public class GunSmithTableMenu extends AbstractContainerMenu {
         ResourceKey<Recipe<?>> recipeKey = ResourceKey.create(Registries.RECIPE, recipeId);
         RecipeHolder<?> holder = recipeManager.byKey(recipeKey).orElse(null);
         Recipe<?> recipe = holder == null ? null : holder.value();
-        if (recipe instanceof GunSmithTableRecipe gunSmithTableRecipe) {
-            gunSmithTableRecipe = gunSmithTableRecipe.withId(recipeId);
+        if (recipe instanceof GunSmithTableRecipe gunSmithTableRecipeRaw) {
+            GunSmithTableRecipe gunSmithTableRecipe = gunSmithTableRecipeRaw.withId(recipeId);
             boolean flag = TimelessAPI.getCommonBlockIndex(getBlockId()).map(blockIndex -> {
                 return blockIndex.getData().getTabs().stream().noneMatch(tab -> tab.id().equals(gunSmithTableRecipe.getTab()));
             }).orElse(true);
@@ -87,11 +90,12 @@ public class GunSmithTableMenu extends AbstractContainerMenu {
     }
 
     public void doCraft(Identifier recipeId, Player player) {
-        GunSmithTableRecipe recipe = getRecipe(recipeId, player.level().getRecipeManager());
+        // Level.getRecipeManager() sumiu - pega via o servidor (esse método só roda no lado servidor)
+        GunSmithTableRecipe recipe = getRecipe(recipeId, ((net.minecraft.server.level.ServerLevel) player.level()).getServer().getRecipeManager());
         if (recipe == null) {
             return;
         }
-        player.tacz$getItemHandler(null).ifPresent(handler -> {
+        ((cn.sh1rocu.tacz.api.mixin.ItemHandlerCapability) player).tacz$getItemHandler(null).ifPresent(handler -> {
             // 是创造模式，就不扣材料
             if (!player.isCreative()) {
                 Int2IntArrayMap recordCount = new Int2IntArrayMap();
@@ -130,7 +134,7 @@ public class GunSmithTableMenu extends AbstractContainerMenu {
 
             // 给玩家对应的物品
             Level level = player.level();
-            if (!level.isClientSide) {
+            if (!level.isClientSide()) {
                 ItemEntity itemEntity = new ItemEntity(level, player.getX(), player.getY() + 0.5, player.getZ(), recipe.getOutput().copy());
                 itemEntity.setPickUpDelay(0);
                 level.addFreshEntity(itemEntity);

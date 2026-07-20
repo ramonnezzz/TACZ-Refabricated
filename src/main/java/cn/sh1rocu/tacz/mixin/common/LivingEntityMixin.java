@@ -7,6 +7,7 @@ import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.sugar.Share;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import com.tacz.guns.init.ModAttributes;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
@@ -38,8 +39,10 @@ public abstract class LivingEntityMixin {
         }
     }
 
-    @ModifyVariable(method = "actuallyHurt", at = @At(value = "LOAD", ordinal = 0), index = 2)
-    private float tacz$livingHurtEvent(float value, DamageSource pDamageSource, @Share("hurt") LocalRef<LivingHurtEvent> eventRef) {
+    // actuallyHurt(DamageSource, float) ganhou um ServerLevel na frente - desloca o slot da LVT
+    // do parâmetro float (era index=2, agora index=3)
+    @ModifyVariable(method = "actuallyHurt", at = @At(value = "LOAD", ordinal = 0), index = 3)
+    private float tacz$livingHurtEvent(float value, ServerLevel level, DamageSource pDamageSource, @Share("hurt") LocalRef<LivingHurtEvent> eventRef) {
         LivingHurtEvent event = new LivingHurtEvent((LivingEntity) (Object) this, pDamageSource, value);
         eventRef.set(event);
         LivingHurtEvent.CALLBACK.invoker().onLivingHurt(event);
@@ -49,12 +52,15 @@ public abstract class LivingEntityMixin {
     }
 
     @Inject(method = "actuallyHurt", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/LivingEntity;getDamageAfterArmorAbsorb(Lnet/minecraft/world/damagesource/DamageSource;F)F"), cancellable = true)
-    private void tacz$shouldCancelHurt(DamageSource damageSource, float f, CallbackInfo ci, @Share("hurt") LocalRef<LivingHurtEvent> eventRef) {
+    private void tacz$shouldCancelHurt(ServerLevel level, DamageSource damageSource, float f, CallbackInfo ci, @Share("hurt") LocalRef<LivingHurtEvent> eventRef) {
         if (eventRef.get().getAmount() <= 0)
             ci.cancel();
     }
 
-    @ModifyVariable(method = "knockback", at = @At("HEAD"), ordinal = 0, argsOnly = true)
+    // knockback() agora tem 2 overloads (a de 6 args com a lógica real, e uma de 5 args que só
+    // delega pra ela com boolean=false) - precisa do descriptor completo pra desambiguar, e a
+    // que tem a lógica de verdade é a de 6 args (DDDLnet/.../DamageSource;FZ)V
+    @ModifyVariable(method = "knockback(DDDLnet/minecraft/world/damagesource/DamageSource;FZ)V", at = @At("HEAD"), ordinal = 0, argsOnly = true)
     private double tacz$modifyKnockbackStrength(double strength, double ogstrength, double xRatio, double zRatio, @Share("event") LocalRef<LivingKnockBackEvent> eventRef) {
         LivingKnockBackEvent event = new LivingKnockBackEvent((LivingEntity) (Object) this, (float) strength, xRatio, zRatio);
         LivingKnockBackEvent.CALLBACK.invoker().onLivingKnockBack(event);
@@ -65,7 +71,7 @@ public abstract class LivingEntityMixin {
         return strength;
     }
 
-    @ModifyVariable(method = "knockback", at = @At("HEAD"), ordinal = 1, argsOnly = true)
+    @ModifyVariable(method = "knockback(DDDLnet/minecraft/world/damagesource/DamageSource;FZ)V", at = @At("HEAD"), ordinal = 1, argsOnly = true)
     private double tacz$modifyRatioX(double ratioX, @Share("event") LocalRef<LivingKnockBackEvent> eventRef) {
         var event = eventRef.get();
         if (event.getOriginalRatioX() != event.getRatioX())
@@ -73,7 +79,7 @@ public abstract class LivingEntityMixin {
         return ratioX;
     }
 
-    @ModifyVariable(method = "knockback", at = @At("HEAD"), ordinal = 2, argsOnly = true)
+    @ModifyVariable(method = "knockback(DDDLnet/minecraft/world/damagesource/DamageSource;FZ)V", at = @At("HEAD"), ordinal = 2, argsOnly = true)
     private double tacz$modifyRatioZ(double ratioZ, @Share("event") LocalRef<LivingKnockBackEvent> eventRef) {
         var event = eventRef.get();
         if (event.getOriginalRatioZ() != event.getRatioZ())
@@ -81,8 +87,10 @@ public abstract class LivingEntityMixin {
         return ratioZ;
     }
 
-    @Inject(method = "knockback", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/LivingEntity;getAttributeValue(Lnet/minecraft/world/entity/ai/attributes/Attribute;)D"), cancellable = true)
-    private void tacz$shouldCancelKnockback(double strength, double xRatio, double zRatio, CallbackInfo ci, @Share("event") LocalRef<LivingKnockBackEvent> eventRef) {
+    // getAttributeValue agora recebe Holder<Attribute> em vez de Attribute direto (genérico
+    // apagado em bytecode -> só Holder mesmo)
+    @Inject(method = "knockback(DDDLnet/minecraft/world/damagesource/DamageSource;FZ)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/LivingEntity;getAttributeValue(Lnet/minecraft/core/Holder;)D"), cancellable = true)
+    private void tacz$shouldCancelKnockback(double strength, double xRatio, double zRatio, DamageSource damageSource, float f, boolean bl, CallbackInfo ci, @Share("event") LocalRef<LivingKnockBackEvent> eventRef) {
         if (eventRef.get().isCanceled())
             ci.cancel();
     }

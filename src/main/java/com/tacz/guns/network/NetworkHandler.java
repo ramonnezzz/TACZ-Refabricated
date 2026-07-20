@@ -53,6 +53,7 @@ public class NetworkHandler {
         PayloadTypeRegistry.clientboundPlay().register(ServerMessageGunKill.TYPE, ServerMessageGunKill.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(ServerMessageUpdateEntityData.TYPE, ServerMessageUpdateEntityData.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(ServerMessageSyncGunPack.TYPE, ServerMessageSyncGunPack.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(ServerMessageSyncGunSmithTableRecipes.TYPE, ServerMessageSyncGunSmithTableRecipes.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(ServerMessageGunDraw.TYPE, ServerMessageGunDraw.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(ServerMessageGunFire.TYPE, ServerMessageGunFire.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(ServerMessageGunFireSelect.TYPE, ServerMessageGunFireSelect.STREAM_CODEC);
@@ -100,6 +101,7 @@ public class NetworkHandler {
         ClientPlayNetworking.registerGlobalReceiver(ServerMessageGunKill.TYPE, (payload, context) -> payload.handle(context.player(), context.responseSender()));
         ClientPlayNetworking.registerGlobalReceiver(ServerMessageUpdateEntityData.TYPE, (payload, context) -> payload.handle(context.player(), context.responseSender()));
         ClientPlayNetworking.registerGlobalReceiver(ServerMessageSyncGunPack.TYPE, (payload, context) -> payload.handle(context.player(), context.responseSender()));
+        ClientPlayNetworking.registerGlobalReceiver(ServerMessageSyncGunSmithTableRecipes.TYPE, (payload, context) -> payload.handle(context.player(), context.responseSender()));
         ClientPlayNetworking.registerGlobalReceiver(ServerMessageGunDraw.TYPE, (payload, context) -> payload.handle(context.player(), context.responseSender()));
         ClientPlayNetworking.registerGlobalReceiver(ServerMessageGunFire.TYPE, (payload, context) -> payload.handle(context.player(), context.responseSender()));
         ClientPlayNetworking.registerGlobalReceiver(ServerMessageGunFireSelect.TYPE, (payload, context) -> payload.handle(context.player(), context.responseSender()));

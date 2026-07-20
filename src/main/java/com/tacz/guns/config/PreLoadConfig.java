@@ -2,17 +2,15 @@ package com.tacz.guns.config;
 
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.tacz.guns.GunMod;
-import fuzs.forgeconfigapiport.api.config.v2.ForgeConfigRegistry;
+import fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry;
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.fml.config.ConfigTracker;
-import net.minecraftforge.fml.config.ModConfig;
+import net.neoforged.fml.config.ModConfig;
 
 import java.nio.file.Path;
 
 public class PreLoadConfig {
     public static void init() {
-        ForgeConfigRegistry.INSTANCE.register(GunMod.MOD_ID, ModConfig.Type.COMMON, spec, "tacz-pre.toml");
-
+        ConfigRegistry.INSTANCE.register(GunMod.MOD_ID, ModConfig.Type.COMMON, spec, "tacz-pre.toml");
     }
 
     private static ForgeConfigSpec spec;
@@ -28,20 +26,17 @@ public class PreLoadConfig {
         spec = builder.build();
     }
 
-    public static PreLoadModConfig getModConfig() {
-        var c = new PreLoadModConfig(ModConfig.Type.COMMON, spec, GunMod.MOD_ID, "tacz-pre.toml");
-        // 从 ConfigTracker 中移除，防止从默认文件夹重复加载
-        ConfigTracker.INSTANCE.configSets().get(ModConfig.Type.COMMON).remove(c);
-        ConfigTracker.INSTANCE.fileMap().remove(c.getFileName(), c);
-        return c;
-    }
-
+    // forgeconfigapiport 26.2.1: ModConfig virou final e perdeu os hooks internos (getHandler(),
+    // ConfigTracker exposto) que a versão antiga usava pra montar um ModConfig falso e ler esse
+    // arquivo de um diretório customizado (gamedir/tacz, não gamedir/config) antes do registro
+    // normal. Em vez disso, carrega o CommentedFileConfig direto e aplica no spec - o spec
+    // (ForgeConfigSpec) não depende de ModConfig/ConfigTracker pra funcionar sozinho.
     public static void load(Path configBasePath) {
         if (spec.isLoaded()) return;
-        PreLoadModConfig config = getModConfig();
-        final CommentedFileConfig configData = config.getHandler().reader(configBasePath).apply(config);
-        config.setConfigData(configData);
-        config.fireEvent(config);
-        config.save();
+        CommentedFileConfig configData = CommentedFileConfig.builder(configBasePath.resolve("tacz-pre.toml")).sync().build();
+        configData.load();
+        spec.correct(configData);
+        spec.acceptConfig(configData);
+        configData.save();
     }
 }

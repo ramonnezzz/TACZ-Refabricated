@@ -3,23 +3,28 @@ package com.tacz.guns.block.entity;
 import com.tacz.guns.init.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.resources.RegistryOps;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 import static com.tacz.guns.block.StatueBlock.FACING;
 
 public class StatueBlockEntity extends BlockEntity {
-    public static final BlockEntityType<StatueBlockEntity> TYPE = BlockEntityType.Builder.of(StatueBlockEntity::new, ModBlocks.STATUE).build(null);
+    // BlockEntityType.Builder sumiu - construtor direto com Set<Block> no lugar dos varargs
+    public static final BlockEntityType<StatueBlockEntity> TYPE = new BlockEntityType<>(StatueBlockEntity::new, java.util.Set.of(ModBlocks.STATUE));
     private static final String ITEM_TAG = "Item";
     private ItemStack gunItem = ItemStack.EMPTY;
 
@@ -34,9 +39,9 @@ public class StatueBlockEntity extends BlockEntity {
             double x = blockPos.getX() + direction.getStepX() * 0.75 + 0.5;
             double z = blockPos.getZ() + direction.getStepZ() * 0.75 + 0.5;
 
-            double dx = -0.02 + level.random.nextDouble() * 0.04;
-            double dz = -0.02 + level.random.nextDouble() * 0.04;
-            double dy = -0.02 + level.random.nextDouble() * 0.04;
+            double dx = -0.02 + level.getRandom().nextDouble() * 0.04;
+            double dz = -0.02 + level.getRandom().nextDouble() * 0.04;
+            double dy = -0.02 + level.getRandom().nextDouble() * 0.04;
 
             level.addParticle(ParticleTypes.END_ROD, x, blockPos.getY() + 2.25, z, dx, dy, dz);
         }
@@ -70,23 +75,21 @@ public class StatueBlockEntity extends BlockEntity {
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        if (tag.contains(ITEM_TAG, Tag.TAG_COMPOUND)) {
-            this.gunItem = ItemStack.of(tag.getCompound(ITEM_TAG));
-        }
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        this.gunItem = input.read(ITEM_TAG, ItemStack.CODEC).orElse(ItemStack.EMPTY);
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.put(ITEM_TAG, gunItem.save(new CompoundTag()));
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        output.store(ITEM_TAG, ItemStack.CODEC, gunItem);
     }
 
     @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = super.getUpdateTag();
-        tag.put(ITEM_TAG, gunItem.save(new CompoundTag()));
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        CompoundTag tag = super.getUpdateTag(registries);
+        tag.put(ITEM_TAG, ItemStack.CODEC.encodeStart(RegistryOps.create(NbtOps.INSTANCE, registries), gunItem).getOrThrow());
         return tag;
     }
 

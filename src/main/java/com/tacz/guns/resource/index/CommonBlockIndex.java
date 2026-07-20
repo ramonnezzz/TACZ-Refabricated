@@ -27,7 +27,8 @@ public class CommonBlockIndex {
     private static void checkIndex(BlockIndexPOJO block, CommonBlockIndex index) {
         Identifier id = index.pojo.getId();
         Preconditions.checkArgument(block != null, "index object file is empty");
-        if (!(BuiltInRegistries.ITEM.get(id) instanceof BlockItem item)) {
+        // Registry#get(Identifier) agora devolve Optional<Holder.Reference<T>>, não mais T cru
+        if (!(BuiltInRegistries.ITEM.get(id).map(net.minecraft.core.Holder::value).orElse(null) instanceof BlockItem item)) {
             throw new IllegalArgumentException("BlockItem not found for " + block.getName());
         }
         index.block = item;

@@ -3,8 +3,11 @@ package cn.sh1rocu.tacz.compat.rei;
 import com.tacz.guns.api.item.gun.GunItemManager;
 import com.tacz.guns.init.ModItems;
 import me.shedaniel.rei.api.common.entry.comparison.ItemComparatorRegistry;
+import me.shedaniel.rei.api.common.plugins.REICommonPlugin;
 
-public class REIPlugin implements me.shedaniel.rei.api.common.plugins.REIPlugin<REIPlugin> {
+// registerItemComparators virou default method de REICommonPlugin (não mais de REIPlugin<P>
+// genérico) na 26.2 - a interface base REIPlugin<P> agora só tem hooks de ciclo de vida
+public class REIPlugin implements REICommonPlugin {
     @Override
     public void registerItemComparators(ItemComparatorRegistry registry) {
         registry.register(REISubtype.getAmmoSubtype(), ModItems.AMMO);
@@ -16,7 +19,7 @@ public class REIPlugin implements me.shedaniel.rei.api.common.plugins.REIPlugin<
 
 
     @Override
-    public Class<REIPlugin> getPluginProviderClass() {
-        return REIPlugin.class;
+    public Class<REICommonPlugin> getPluginProviderClass() {
+        return REICommonPlugin.class;
     }
 }

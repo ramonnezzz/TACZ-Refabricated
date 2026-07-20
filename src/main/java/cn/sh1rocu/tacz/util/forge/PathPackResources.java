@@ -1,10 +1,11 @@
 package cn.sh1rocu.tacz.util.forge;
 
 import com.mojang.logging.LogUtils;
-import net.minecraft.FileUtil;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.AbstractPackResources;
+import net.minecraft.server.packs.PackLocationInfo;
 import net.minecraft.server.packs.PackType;
+import net.minecraft.util.FileUtil;
 import net.minecraft.server.packs.resources.IoSupplier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,13 +35,11 @@ public class PathPackResources extends AbstractPackResources {
     /**
      * Constructs a java.nio.Path-based resource pack.
      *
-     * @param packId    the identifier of the pack.
-     *                  This identifier should be unique within the pack finder, preferably the name of the file or folder containing the resources.
-     * @param isBuiltin whether this pack resources should be considered builtin
-     * @param source    the root path of the pack. This needs to point to the folder that contains "assets" and/or "data", not the asset folder itself!
+     * @param location the pack's location info (id, title, source)
+     * @param source   the root path of the pack. This needs to point to the folder that contains "assets" and/or "data", not the asset folder itself!
      */
-    public PathPackResources(String packId, boolean isBuiltin, final Path source) {
-        super(packId, isBuiltin);
+    public PathPackResources(PackLocationInfo location, final Path source) {
+        super(location);
         this.source = source;
     }
 
@@ -79,9 +78,10 @@ public class PathPackResources extends AbstractPackResources {
 
     @Override
     public void listResources(PackType type, String namespace, String path, ResourceOutput resourceOutput) {
-        FileUtil.decomposePath(path).get()
-                .ifLeft(parts -> net.minecraft.server.packs.PathPackResources.listPath(namespace, resolve(type.getDirectory(), namespace).toAbsolutePath(), parts, resourceOutput))
-                .ifRight(dataResult -> LOGGER.error("Invalid path {}: {}", path, dataResult.message()));
+        var decomposed = FileUtil.decomposePath(path);
+        decomposed.result().ifPresentOrElse(
+                parts -> net.minecraft.server.packs.PathPackResources.listPath(namespace, resolve(type.getDirectory(), namespace).toAbsolutePath(), parts, resourceOutput),
+                () -> decomposed.error().ifPresent(err -> LOGGER.error("Invalid path {}: {}", path, err.message())));
     }
 
     @Override

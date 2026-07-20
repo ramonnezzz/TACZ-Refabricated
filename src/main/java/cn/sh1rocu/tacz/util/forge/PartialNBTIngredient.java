@@ -1,27 +1,37 @@
 package cn.sh1rocu.tacz.util.forge;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSyntaxException;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.fabricmc.fabric.api.recipe.v1.ingredient.CustomIngredient;
 import net.fabricmc.fabric.api.recipe.v1.ingredient.CustomIngredientSerializer;
-import net.minecraft.advancements.critereon.NbtPredicate;
+import net.minecraft.advancements.predicates.NbtPredicate;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.Identifier;
-import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ItemLike;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class PartialNBTIngredient implements CustomIngredient {
+    private static final Codec<Set<Item>> ITEMS_CODEC = BuiltInRegistries.ITEM.byNameCodec().listOf()
+            .xmap(HashSet::new, list -> list.stream().toList());
+    private static final StreamCodec<RegistryFriendlyByteBuf, Set<Item>> ITEMS_STREAM_CODEC =
+            ByteBufCodecs.collection(HashSet::new, ByteBufCodecs.registry(Registries.ITEM));
+
     private final Set<Item> items;
     private final CompoundTag nbt;
     private final NbtPredicate predicate;
@@ -53,17 +63,12 @@ public class PartialNBTIngredient implements CustomIngredient {
     public boolean test(@Nullable ItemStack input) {
         if (input == null)
             return false;
-        return items.contains(input.getItem()) && predicate.matches(input.getTag());
+        return items.contains(input.getItem()) && predicate.matches(input);
     }
 
     @Override
-    public List<ItemStack> getMatchingStacks() {
-        return items.stream().map(item -> {
-            ItemStack stack = new ItemStack(item);
-            // copy NBT to prevent the stack from modifying the original, as capabilities or vanilla item durability will modify the tag
-            stack.setTag(nbt.copy());
-            return stack;
-        }).toList();
+    public Stream<Holder<Item>> items() {
+        return items.stream().map(Item::builtInRegistryHolder);
     }
 
     @Override
@@ -81,62 +86,30 @@ public class PartialNBTIngredient implements CustomIngredient {
     public static class Serializer implements CustomIngredientSerializer<PartialNBTIngredient> {
         public static final Serializer INSTANCE = new Serializer();
 
+        public static final MapCodec<PartialNBTIngredient> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+                ITEMS_CODEC.fieldOf("items").forGetter(i -> i.items),
+                CompoundTag.CODEC.fieldOf("nbt").forGetter(i -> i.nbt)
+        ).apply(instance, PartialNBTIngredient::new));
+
+        public static final StreamCodec<RegistryFriendlyByteBuf, PartialNBTIngredient> STREAM_CODEC = StreamCodec.composite(
+                ITEMS_STREAM_CODEC, i -> i.items,
+                ByteBufCodecs.TRUSTED_COMPOUND_TAG, i -> i.nbt,
+                PartialNBTIngredient::new
+        );
+
         @Override
         public Identifier getIdentifier() {
             return ID;
         }
 
         @Override
-        public PartialNBTIngredient read(JsonObject json) {
-            // parse items
-            Set<Item> items;
-            if (json.has("item"))
-                items = Set.of(CraftingHelper.getItem(GsonHelper.getAsString(json, "item"), true));
-            else if (json.has("items")) {
-                ImmutableSet.Builder<Item> builder = ImmutableSet.builder();
-                JsonArray itemArray = GsonHelper.getAsJsonArray(json, "items");
-                for (int i = 0; i < itemArray.size(); i++) {
-                    builder.add(CraftingHelper.getItem(GsonHelper.convertToString(itemArray.get(i), "items[" + i + ']'), true));
-                }
-                items = builder.build();
-            } else
-                throw new JsonSyntaxException("Must set either 'item' or 'items'");
-
-            // parse NBT
-            if (!json.has("nbt"))
-                throw new JsonSyntaxException("Missing nbt, expected to find a String or JsonObject");
-            CompoundTag nbt = CraftingHelper.getNBT(json.get("nbt"));
-
-            return new PartialNBTIngredient(items, nbt);
+        public MapCodec<PartialNBTIngredient> getCodec() {
+            return CODEC;
         }
 
         @Override
-        public void write(JsonObject json, PartialNBTIngredient ingredient) {
-            json.addProperty("type", ID.toString());
-            if (ingredient.items.size() == 1) {
-                json.addProperty("item", BuiltInRegistries.ITEM.getKey(ingredient.items.iterator().next()).toString());
-            } else {
-                JsonArray items = new JsonArray();
-                // ensure the order of items in the set is deterministic when saved to JSON
-                ingredient.items.stream().map(BuiltInRegistries.ITEM::getKey).sorted().forEach(name -> items.add(name.toString()));
-                json.add("items", items);
-            }
-            json.addProperty("nbt", ingredient.nbt.toString());
-        }
-
-        @Override
-        public PartialNBTIngredient read(FriendlyByteBuf buffer) {
-            Set<Item> items = Stream.generate(() -> BuiltInRegistries.ITEM.get(buffer.readIdentifier())).limit(buffer.readVarInt()).collect(Collectors.toSet());
-            CompoundTag nbt = buffer.readNbt();
-            return new PartialNBTIngredient(items, Objects.requireNonNull(nbt));
-        }
-
-        @Override
-        public void write(FriendlyByteBuf buffer, PartialNBTIngredient ingredient) {
-            buffer.writeVarInt(ingredient.items.size());
-            for (Item item : ingredient.items)
-                buffer.writeIdentifier(BuiltInRegistries.ITEM.getKey(item));
-            buffer.writeNbt(ingredient.nbt);
+        public StreamCodec<RegistryFriendlyByteBuf, PartialNBTIngredient> getStreamCodec() {
+            return STREAM_CODEC;
         }
     }
 }

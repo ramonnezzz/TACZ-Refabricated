@@ -5,7 +5,9 @@ import cn.sh1rocu.tacz.util.itemhandler.RangedWrapper;
 import net.minecraft.world.entity.player.Inventory;
 
 public class PlayerOffhandInvWrapper extends RangedWrapper {
+    // Inventory#armor/offhand sumiram (EntityEquipment interno) - 4 slots de armadura, 1 de
+    // offhand, invariante na vanilla (ver PlayerArmorInvWrapper)
     public PlayerOffhandInvWrapper(Inventory inv) {
-        super(new InvWrapper(inv), inv.items.size() + inv.armor.size(), inv.items.size() + inv.armor.size() + inv.offhand.size());
+        super(new InvWrapper(inv), inv.getNonEquipmentItems().size() + 4, inv.getNonEquipmentItems().size() + 4 + 1);
     }
 }

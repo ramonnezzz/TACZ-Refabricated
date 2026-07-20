@@ -22,12 +22,14 @@ import java.util.function.Supplier;
 @Environment(EnvType.CLIENT)
 @Mixin(ClientLevel.class)
 public abstract class ClientLevelMixin extends Level {
-    protected ClientLevelMixin(WritableLevelData levelData, ResourceKey<Level> dimension, RegistryAccess registryAccess, Holder<DimensionType> dimensionTypeRegistration, Supplier<ProfilerFiller> profiler, boolean isClientSide, boolean isDebug, long biomeZoomSeed, int maxChainedNeighborUpdates) {
-        super(levelData, dimension, registryAccess, dimensionTypeRegistration, profiler, isClientSide, isDebug, biomeZoomSeed, maxChainedNeighborUpdates);
+    // Level perdeu o parâmetro Supplier<ProfilerFiller> profiler no construtor
+    protected ClientLevelMixin(WritableLevelData levelData, ResourceKey<Level> dimension, RegistryAccess registryAccess, Holder<DimensionType> dimensionTypeRegistration, boolean isClientSide, boolean isDebug, long biomeZoomSeed, int maxChainedNeighborUpdates) {
+        super(levelData, dimension, registryAccess, dimensionTypeRegistration, isClientSide, isDebug, biomeZoomSeed, maxChainedNeighborUpdates);
     }
 
+    // addEntity(int, Entity) virou addEntity(Entity) - sem id explícito
     @Inject(method = "addEntity", at = @At("HEAD"), cancellable = true)
-    public void tlm$entityJoinLevelEvent(int entityId, Entity entityToSpawn, CallbackInfo ci) {
+    public void tlm$entityJoinLevelEvent(Entity entityToSpawn, CallbackInfo ci) {
         EntityJoinLevelEvent event = new EntityJoinLevelEvent(entityToSpawn, this);
         EntityJoinLevelEvent.CALLBACK.invoker().post(event);
         if (event.isCanceled())

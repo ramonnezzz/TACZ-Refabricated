@@ -2,6 +2,7 @@ package com.tacz.guns.item;
 
 import com.tacz.guns.GunMod;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import org.jetbrains.annotations.NotNull;
@@ -12,6 +13,10 @@ public class DefaultTableItem extends GunSmithTableItem {
 
     public DefaultTableItem(Block block) {
         super(block);
+    }
+
+    public DefaultTableItem(Block block, Item.Properties properties) {
+        super(block, properties);
     }
 
     @Override

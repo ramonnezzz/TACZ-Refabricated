@@ -24,6 +24,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
@@ -53,13 +54,22 @@ import java.util.function.Supplier;
 public class ModernKineticGunItem extends AbstractGunItem implements GunItemDataAccessor {
     public static final String TYPE_NAME = "modern_kinetic";
 
+    // AttributeModifier trocou o id de UUID pra Identifier
     private static final DoubleFunction<AttributeModifier> AM_FACTORY = amount -> new AttributeModifier(
-            UUID.randomUUID(), "TACZ Melee Damage",
-            amount, AttributeModifier.Operation.ADDITION
+            Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "melee_damage_" + UUID.randomUUID()),
+            amount, AttributeModifier.Operation.ADD_VALUE
     );
 
     public ModernKineticGunItem() {
-        super(new Properties().stacksTo(1));
+        this(defaultProperties());
+    }
+
+    public ModernKineticGunItem(Properties properties) {
+        super(properties);
+    }
+
+    public static Properties defaultProperties() {
+        return new Properties().stacksTo(1);
     }
 
     @Override
@@ -512,26 +522,26 @@ public class ModernKineticGunItem extends AbstractGunItem implements GunItemData
         if (target.equals(user)) {
             return;
         }
-        target.knockback(knockback, (float) Math.sin(Math.toRadians(user.getYRot())), (float) -Math.cos(Math.toRadians(user.getYRot())));
-        if (user instanceof Player player) {
-            target.hurt(user.damageSources().playerAttack(player), damage);
-        } else {
-            target.hurt(user.damageSources().mobAttack(user), damage);
-        }
-        // 修复近战枪械不触发神化词条/宝石的bug
-        user.doEnchantDamageEffects(user, target);
+        // hurt(DamageSource, float) saiu de LivingEntity - virou hurtServer(ServerLevel, ...),
+        // já que dano agora é sempre resolvido no lado do servidor. doEnchantDamageEffects
+        // também sumiu - a aplicação de efeitos de encantamento passou a ser automática dentro
+        // de hurtServer, então a chamada extra que corrigia o bug antigo não é mais necessária
+        DamageSource damageSource = user instanceof Player player ? user.damageSources().playerAttack(player) : user.damageSources().mobAttack(user);
+        target.knockback(knockback, Math.sin(Math.toRadians(user.getYRot())), -Math.cos(Math.toRadians(user.getYRot())), damageSource, 0f);
+        target.hurtServer((ServerLevel) target.level(), damageSource, damage);
 
         if (!target.isAlive()) {
             return;
         }
         for (EffectData data : effects) {
-            MobEffect mobEffect = BuiltInRegistries.MOB_EFFECT.get(data.getEffectId());
-            if (mobEffect == null) {
+            // Registry#get(Identifier) agora devolve Optional<Holder.Reference<T>>, não mais T cru
+            var mobEffectHolder = BuiltInRegistries.MOB_EFFECT.get(data.getEffectId()).orElse(null);
+            if (mobEffectHolder == null) {
                 continue;
             }
             int time = Math.max(0, data.getTime() * 20);
             int amplifier = Math.max(0, data.getAmplifier());
-            MobEffectInstance effectInstance = new MobEffectInstance(mobEffect, time, amplifier, false, data.isHideParticles());
+            MobEffectInstance effectInstance = new MobEffectInstance(mobEffectHolder, time, amplifier, false, data.isHideParticles());
             target.addEffect(effectInstance);
         }
         if (user.level() instanceof ServerLevel serverLevel) {

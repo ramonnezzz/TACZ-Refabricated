@@ -1,7 +1,6 @@
 package com.tacz.guns.client.model.functional;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import com.tacz.guns.client.model.IFunctionalRenderer;
 import com.tacz.guns.client.model.bedrock.BedrockModel;
@@ -9,8 +8,8 @@ import com.tacz.guns.client.model.papi.PapiManager;
 import com.tacz.guns.client.resource.pojo.display.gun.TextShow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import org.apache.commons.lang3.StringUtils;
@@ -29,7 +28,7 @@ public class TextShowRender implements IFunctionalRenderer {
     }
 
     @Override
-    public void render(PoseStack poseStack, VertexConsumer vertexBuffer, ItemDisplayContext transformType, int light, int overlay) {
+    public void render(PoseStack poseStack, SubmitNodeCollector collector, RenderType renderType, ItemDisplayContext transformType, int light, int overlay) {
         if (!transformType.firstPerson()) {
             return;
         }
@@ -42,12 +41,8 @@ public class TextShowRender implements IFunctionalRenderer {
         Matrix4f pose = new Matrix4f(poseStack.last().pose());
 
         // 和枪械模型共用顶点缓冲的都需要代理到渲染结束后渲染
-        bedrockModel.delegateRender((poseStack1, vertexBuffer1, transformType1, light1, overlay1) -> {
+        bedrockModel.delegateRender((poseStack1, collector1, renderType1, transformType1, light1, overlay1) -> {
             Font font = Minecraft.getInstance().font;
-            boolean shadow = textShow.isShadow();
-            int color = textShow.getColorInt();
-            float scale = textShow.getScale();
-            int packLight = LightTexture.pack(textShow.getTextLight(), textShow.getTextLight());
             int width = font.width(text);
             int xOffset;
             switch (textShow.getAlign()) {
@@ -59,11 +54,12 @@ public class TextShowRender implements IFunctionalRenderer {
             PoseStack poseStack2 = new PoseStack();
             poseStack2.last().normal().mul(normal);
             poseStack2.last().pose().mul(pose);
-            poseStack2.scale(2 / 300f * scale, -2 / 300f * scale, -2 / 300f);
+            poseStack2.scale(2 / 300f * textShow.getScale(), -2 / 300f * textShow.getScale(), -2 / 300f);
 
-            MultiBufferSource.BufferSource bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
-            font.drawInBatch(text, -xOffset, -font.lineHeight / 2f, color, shadow, poseStack2.last().pose(), bufferSource, Font.DisplayMode.NORMAL, 0, packLight);
-            bufferSource.endBatch();
+            // Font.drawInBatch(text, x, y, color, shadow, matrix, bufferSource, mode, bg, light)
+            // sumiu - o texto agora é preparado via Font.prepareText() e desenhado com um
+            // Font.GlyphVisitor manual. Fica pra uma passada dedicada depois (código morto por
+            // ora: só alcançável pela cadeia de renderer de item builtin, desativada)
         });
     }
 }

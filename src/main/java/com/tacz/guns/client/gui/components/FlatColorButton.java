@@ -36,7 +36,7 @@ public class FlatColorButton extends Button {
 
     public void renderToolTip(GuiGraphicsExtractor graphics, Screen screen, int pMouseX, int pMouseY) {
         if (this.isHovered && tooltips != null) {
-            graphics.setComponentTooltipForNextFrame(Screens.getClient(screen).font, tooltips, pMouseX, pMouseY);
+            graphics.setComponentTooltipForNextFrame(Screens.getMinecraft(screen).font, tooltips, pMouseX, pMouseY);
         }
     }
 
@@ -58,7 +58,7 @@ public class FlatColorButton extends Button {
         // renderScrollingString foi substituído por extractScrollingStringOverContents (usa ActiveTextCollector,
         // sem bounds explícitos) - simplificado pra um texto centralizado, sem a animação de scroll
         graphics.centeredText(font, this.getMessage(), this.getX() + 2 + (this.width - 4) / 2, this.getY() + (this.height - 8) / 2, 0xF3EFE0);
-        this.renderToolTip(graphics, minecraft.screen, mouseX, mouseY);
+        this.renderToolTip(graphics, minecraft.gui.screen(), mouseX, mouseY);
     }
 
     public void setSelect(boolean select) {

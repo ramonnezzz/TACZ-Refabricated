@@ -33,7 +33,7 @@ public class ClothConfigScreen extends Screen {
                         .bounds(posX, posY - 15, 200, 20).build()
         );
         this.addRenderableWidget(
-                Button.builder(CommonComponents.GUI_BACK, b -> Minecraft.getInstance().setScreen(this.lastScreen))
+                Button.builder(CommonComponents.GUI_BACK, b -> Minecraft.getInstance().setScreenAndShow(this.lastScreen))
                         .bounds(posX, posY + 50, 200, 20).build()
         );
     }
@@ -47,11 +47,11 @@ public class ClothConfigScreen extends Screen {
 
     private void openUrl(String url) {
         if (StringUtils.isNotBlank(url) && minecraft != null) {
-            minecraft.setScreen(new ConfirmLinkScreen(yes -> {
+            minecraft.setScreenAndShow(new ConfirmLinkScreen(yes -> {
                 if (yes) {
                     Util.getPlatform().openUri(url);
                 }
-                minecraft.setScreen(this);
+                minecraft.setScreenAndShow(this);
             }, url, true));
         }
     }

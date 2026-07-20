@@ -75,8 +75,7 @@ public class GunSmithTableCategory implements DisplayCategory<GunSmithTableDispl
     private List<EntryStack<ItemStack>> getInput(List<GunSmithTableIngredient> inputs, int index) {
         if (index < inputs.size()) {
             GunSmithTableIngredient ingredient = inputs.get(index);
-            ItemStack[] items = ingredient.getIngredient().getItems();
-            return Arrays.stream(items).map(stack -> EntryStack.of(VanillaEntryTypes.ITEM, stack.copyWithCount(ingredient.getCount()))).toList();
+            return ingredient.getIngredient().items().map(holder -> EntryStack.of(VanillaEntryTypes.ITEM, new ItemStack(holder, ingredient.getCount()))).toList();
         }
         return Collections.singletonList(EntryStack.of(VanillaEntryTypes.ITEM, ItemStack.EMPTY));
     }

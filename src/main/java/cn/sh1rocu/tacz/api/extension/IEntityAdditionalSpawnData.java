@@ -13,6 +13,7 @@ import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundBundlePacket;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerEntity;
 import net.minecraft.world.entity.Entity;
 
 import java.util.List;
@@ -23,8 +24,11 @@ public interface IEntityAdditionalSpawnData {
 
     void writeSpawnData(FriendlyByteBuf buf);
 
-    static Packet<ClientGamePacketListener> getEntitySpawningPacket(Entity entity) {
-        return getEntitySpawningPacket(entity, new ClientboundAddEntityPacket(entity));
+    // ClientboundAddEntityPacket(Entity) sumiu - agora exige o ServerEntity que acompanha a
+    // entidade (ver Entity#getAddEntityPacket(ServerEntity), chamado por quem implementa essa
+    // interface)
+    static Packet<ClientGamePacketListener> getEntitySpawningPacket(Entity entity, ServerEntity serverEntity) {
+        return getEntitySpawningPacket(entity, new ClientboundAddEntityPacket(entity, serverEntity));
     }
 
     static Packet<ClientGamePacketListener> getEntitySpawningPacket(Entity entity, Packet<ClientGamePacketListener> base) {

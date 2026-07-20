@@ -3,7 +3,6 @@ package cn.sh1rocu.tacz.util.itemhandler.entity.player;
 import cn.sh1rocu.tacz.util.itemhandler.InvWrapper;
 import cn.sh1rocu.tacz.util.itemhandler.RangedWrapper;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
@@ -12,7 +11,9 @@ public class PlayerArmorInvWrapper extends RangedWrapper {
     private final Inventory inventoryPlayer;
 
     public PlayerArmorInvWrapper(Inventory inv) {
-        super(new InvWrapper(inv), inv.items.size(), inv.items.size() + inv.armor.size());
+        // Inventory#armor/offhand sumiram (viraram um EntityEquipment interno) - armadura
+        // sempre tem 4 slots (ver o "slot < 4" logo abaixo, já assumia isso)
+        super(new InvWrapper(inv), inv.getNonEquipmentItems().size(), inv.getNonEquipmentItems().size() + 4);
         this.inventoryPlayer = inv;
     }
 
@@ -21,7 +22,7 @@ public class PlayerArmorInvWrapper extends RangedWrapper {
         EquipmentSlot equ = null;
 
         for (EquipmentSlot s : EquipmentSlot.values()) {
-            if (s.getType() == EquipmentSlot.Type.ARMOR && s.getIndex() == slot) {
+            if (s.getType() == EquipmentSlot.Type.HUMANOID_ARMOR && s.getIndex() == slot) {
                 equ = s;
                 break;
             }
@@ -32,7 +33,7 @@ public class PlayerArmorInvWrapper extends RangedWrapper {
 
 
     private boolean canEquip(ItemStack stack, EquipmentSlot armorType) {
-        return LivingEntity.getEquipmentSlotForItem(stack) == armorType;
+        return inventoryPlayer.player.getEquipmentSlotForItem(stack) == armorType;
     }
 
     public Inventory getInventoryPlayer() {

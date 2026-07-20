@@ -1,9 +1,9 @@
 package com.tacz.guns.client.model;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.tacz.guns.client.model.bedrock.BedrockPart;
-import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.world.item.ItemDisplayContext;
 
 import javax.annotation.Nonnull;
@@ -44,11 +44,11 @@ public class FunctionalBedrockPart extends BedrockPart {
     }
 
     @Override
-    public void render(PoseStack poseStack, ItemDisplayContext transformType, VertexConsumer consumer, int light, int overlay, float red, float green, float blue, float alpha) {
+    public void render(PoseStack poseStack, ItemDisplayContext transformType, SubmitNodeCollector collector, RenderType renderType, int light, int overlay, float red, float green, float blue, float alpha) {
         int cubePackedLight = light;
         if (illuminated) {
             // 最大亮度
-            cubePackedLight = LightTexture.pack(15, 15);
+            cubePackedLight = FULL_BRIGHT_LIGHT;
         }
 
         poseStack.pushPose();
@@ -57,20 +57,24 @@ public class FunctionalBedrockPart extends BedrockPart {
         if (functionalRenderer != null) {
             @Nullable IFunctionalRenderer renderer = functionalRenderer.apply(this);
             if (renderer != null) {
-                renderer.render(poseStack, consumer, transformType, cubePackedLight, overlay);
+                renderer.render(poseStack, collector, renderType, transformType, cubePackedLight, overlay);
             } else {
                 if (this.visible) {
-                    super.compile(poseStack.last(), consumer, cubePackedLight, overlay, red, green, blue, alpha);
+                    int finalCubePackedLight = cubePackedLight;
+                    collector.submitCustomGeometry(poseStack, renderType, (pose, consumer) ->
+                            this.compile(pose, consumer, finalCubePackedLight, overlay, red, green, blue, alpha));
                     for (BedrockPart part : this.children) {
-                        part.render(poseStack, transformType, consumer, cubePackedLight, overlay, red, green, blue, alpha);
+                        part.render(poseStack, transformType, collector, renderType, cubePackedLight, overlay, red, green, blue, alpha);
                     }
                 }
             }
         } else {
             if (this.visible) {
-                super.compile(poseStack.last(), consumer, cubePackedLight, overlay, red, green, blue, alpha);
+                int finalCubePackedLight = cubePackedLight;
+                collector.submitCustomGeometry(poseStack, renderType, (pose, consumer) ->
+                        this.compile(pose, consumer, finalCubePackedLight, overlay, red, green, blue, alpha));
                 for (BedrockPart part : this.children) {
-                    part.render(poseStack, transformType, consumer, cubePackedLight, overlay, red, green, blue, alpha);
+                    part.render(poseStack, transformType, collector, renderType, cubePackedLight, overlay, red, green, blue, alpha);
                 }
             }
         }

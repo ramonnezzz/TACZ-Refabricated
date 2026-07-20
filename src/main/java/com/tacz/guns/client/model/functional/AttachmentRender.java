@@ -1,19 +1,16 @@
 package com.tacz.guns.client.model.functional;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.IAttachment;
 import com.tacz.guns.api.item.attachment.AttachmentType;
 import com.tacz.guns.client.model.BedrockAttachmentModel;
 import com.tacz.guns.client.model.BedrockGunModel;
 import com.tacz.guns.client.model.IFunctionalRenderer;
-import com.tacz.guns.client.renderer.item.AttachmentItemRenderer;
 import com.tacz.guns.util.RenderDistance;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -32,7 +29,7 @@ public class AttachmentRender implements IFunctionalRenderer {
         this.type = type;
     }
 
-    public static void renderAttachment(ItemStack attachmentItem, ItemStack gunItem, PoseStack poseStack, ItemDisplayContext transformType, int light, int overlay) {
+    public static void renderAttachment(ItemStack attachmentItem, ItemStack gunItem, PoseStack poseStack, ItemDisplayContext transformType, SubmitNodeCollector collector, int light, int overlay) {
         poseStack.translate(0, -1.5, 0);
         if (attachmentItem.getItem() instanceof IAttachment iAttachment) {
             Identifier attachmentId = iAttachment.getAttachmentId(attachmentItem);
@@ -48,32 +45,30 @@ public class AttachmentRender implements IFunctionalRenderer {
                         model = lodModel.getLeft();
                         texture = lodModel.getRight();
                     }
-                    RenderType renderType = RenderType.entityCutout(texture);
-                    model.render(attachmentItem, gunItem, poseStack, transformType, renderType, light, overlay);
+                    RenderType renderType = RenderTypes.entityCutout(texture);
+                    model.render(attachmentItem, gunItem, poseStack, transformType, collector, renderType, light, overlay);
                 }
             }, () -> {
-                // 没有对应的 attachmentIndex，渲染黑紫材质以提醒
-                MultiBufferSource bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
-                VertexConsumer buffer = bufferSource.getBuffer(RenderType.entityTranslucent(MissingTextureAtlasSprite.getLocation()));
-                AttachmentItemRenderer.SLOT_ATTACHMENT_MODEL.renderToBuffer(poseStack, buffer, light, overlay, 1.0F, 1.0F, 1.0F, 1.0F);
+                // Placeholder preto-roxo removido: dependia de AttachmentItemRenderer, excluído
+                // da build (SpecialModelRenderer ainda não portado, ver build.gradle)
             });
         }
     }
 
     @Override
-    public void render(PoseStack poseStack, VertexConsumer vertexBuffer, ItemDisplayContext transformType, int light, int overlay) {
+    public void render(PoseStack poseStack, SubmitNodeCollector collector, RenderType renderType, ItemDisplayContext transformType, int light, int overlay) {
         EnumMap<AttachmentType, ItemStack> currentAttachmentItem = bedrockGunModel.getCurrentAttachmentItem();
         ItemStack attachmentItem = currentAttachmentItem.get(type);
         if (attachmentItem != null && !attachmentItem.isEmpty()) {
             Matrix3f normal = new Matrix3f(poseStack.last().normal());
             Matrix4f pose = new Matrix4f(poseStack.last().pose());
             //和枪械模型共用顶点缓冲的都需要代理到渲染结束后渲染
-            bedrockGunModel.delegateRender((poseStack1, vertexBuffer1, transformType1, light1, overlay1) -> {
+            bedrockGunModel.delegateRender((poseStack1, collector1, renderType1, transformType1, light1, overlay1) -> {
                 PoseStack poseStack2 = new PoseStack();
                 poseStack2.last().normal().mul(normal);
                 poseStack2.last().pose().mul(pose);
                 // 渲染配件
-                renderAttachment(attachmentItem, bedrockGunModel.getCurrentGunItem(), poseStack2, transformType, light, overlay);
+                renderAttachment(attachmentItem, bedrockGunModel.getCurrentGunItem(), poseStack2, transformType, collector1, light, overlay);
             });
         }
     }
