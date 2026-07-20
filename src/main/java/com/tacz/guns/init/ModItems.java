@@ -6,7 +6,7 @@ import com.tacz.guns.item.*;
 import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 
@@ -34,6 +34,6 @@ public class ModItems {
     public static Item TARGET_MINECART = register("target_minecart", new TargetMinecartItem());
 
     private static <T extends Item> T register(String name, T item) {
-        return Registry.register(BuiltInRegistries.ITEM, new ResourceLocation(GunMod.MOD_ID, name), item);
+        return Registry.register(BuiltInRegistries.ITEM, Identifier.fromNamespaceAndPath(GunMod.MOD_ID, name), item);
     }
 }

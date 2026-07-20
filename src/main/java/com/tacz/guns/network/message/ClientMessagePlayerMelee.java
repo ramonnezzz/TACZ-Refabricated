@@ -2,15 +2,16 @@ package com.tacz.guns.network.message;
 
 import com.tacz.guns.GunMod;
 import com.tacz.guns.api.entity.IGunOperator;
-import net.fabricmc.fabric.api.networking.v1.FabricPacket;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
-import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 
-public class ClientMessagePlayerMelee implements FabricPacket {
-    public static final PacketType<ClientMessagePlayerMelee> TYPE = PacketType.create(new ResourceLocation(GunMod.MOD_ID, "c2s_player_melee"), ClientMessagePlayerMelee::new);
+public class ClientMessagePlayerMelee implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<ClientMessagePlayerMelee> TYPE = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "c2s_player_melee"));
+    public static final StreamCodec<FriendlyByteBuf, ClientMessagePlayerMelee> STREAM_CODEC = CustomPacketPayload.codec(ClientMessagePlayerMelee::write, ClientMessagePlayerMelee::new);
 
     public ClientMessagePlayerMelee(FriendlyByteBuf buf) {
         this();
@@ -20,13 +21,12 @@ public class ClientMessagePlayerMelee implements FabricPacket {
 
     }
 
-    @Override
     public void write(FriendlyByteBuf buf) {
 
     }
 
     @Override
-    public PacketType<?> getType() {
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 

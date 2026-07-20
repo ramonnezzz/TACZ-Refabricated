@@ -4,13 +4,13 @@ import com.tacz.guns.GunMod;
 import com.tacz.guns.network.IHandshakeMessage;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
 public class AcknowledgeC2SPacket implements IHandshakeMessage.IResponsePacket {
     public static final Marker ACKNOWLEDGE = MarkerFactory.getMarker("HANDSHAKE_ACKNOWLEDGE");
-    public static final ResourceLocation ID = new ResourceLocation(GunMod.MOD_ID, "acknowledge");
+    public static final Identifier ID = Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "acknowledge");
 
     @Override
     public void write(FriendlyByteBuf buf) {
@@ -25,7 +25,7 @@ public class AcknowledgeC2SPacket implements IHandshakeMessage.IResponsePacket {
         GunMod.LOGGER.debug(ACKNOWLEDGE, "Received acknowledgement from client");
     }
 
-    public ResourceLocation getId() {
+    public Identifier getId() {
         return ID;
     }
 }

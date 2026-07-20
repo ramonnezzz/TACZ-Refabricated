@@ -2,15 +2,16 @@ package com.tacz.guns.network.message;
 
 import com.tacz.guns.GunMod;
 import com.tacz.guns.api.entity.IGunOperator;
-import net.fabricmc.fabric.api.networking.v1.FabricPacket;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
-import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 
-public class ClientMessagePlayerAim implements FabricPacket {
-    public static final PacketType<ClientMessagePlayerAim> TYPE = PacketType.create(new ResourceLocation(GunMod.MOD_ID, "c2s_player_aim"), ClientMessagePlayerAim::new);
+public class ClientMessagePlayerAim implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<ClientMessagePlayerAim> TYPE = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "c2s_player_aim"));
+    public static final StreamCodec<FriendlyByteBuf, ClientMessagePlayerAim> STREAM_CODEC = CustomPacketPayload.codec(ClientMessagePlayerAim::write, ClientMessagePlayerAim::new);
 
     private final boolean isAim;
 
@@ -22,13 +23,12 @@ public class ClientMessagePlayerAim implements FabricPacket {
         this.isAim = buf.readBoolean();
     }
 
-    @Override
     public void write(FriendlyByteBuf buf) {
         buf.writeBoolean(isAim);
     }
 
     @Override
-    public PacketType<?> getType() {
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 

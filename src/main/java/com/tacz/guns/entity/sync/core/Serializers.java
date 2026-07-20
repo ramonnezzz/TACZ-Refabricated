@@ -3,7 +3,8 @@ package com.tacz.guns.entity.sync.core;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.*;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.UUID;
@@ -288,12 +289,12 @@ public class Serializers {
     public static final IDataSerializer<ItemStack> ITEM_STACK = new IDataSerializer<>() {
         @Override
         public void write(FriendlyByteBuf buf, ItemStack value) {
-            buf.writeItem(value);
+            ItemStack.OPTIONAL_STREAM_CODEC.encode((RegistryFriendlyByteBuf) buf, value);
         }
 
         @Override
         public ItemStack read(FriendlyByteBuf buf) {
-            return buf.readItem();
+            return ItemStack.OPTIONAL_STREAM_CODEC.decode((RegistryFriendlyByteBuf) buf);
         }
 
         @Override
@@ -307,25 +308,25 @@ public class Serializers {
         }
     };
 
-    public static final IDataSerializer<ResourceLocation> RESOURCE_LOCATION = new IDataSerializer<>() {
+    public static final IDataSerializer<Identifier> RESOURCE_LOCATION = new IDataSerializer<>() {
         @Override
-        public void write(FriendlyByteBuf buf, ResourceLocation value) {
-            buf.writeResourceLocation(value);
+        public void write(FriendlyByteBuf buf, Identifier value) {
+            buf.writeIdentifier(value);
         }
 
         @Override
-        public ResourceLocation read(FriendlyByteBuf buf) {
-            return buf.readResourceLocation();
+        public Identifier read(FriendlyByteBuf buf) {
+            return buf.readIdentifier();
         }
 
         @Override
-        public Tag write(ResourceLocation value) {
+        public Tag write(Identifier value) {
             return StringTag.valueOf(value.toString());
         }
 
         @Override
-        public ResourceLocation read(Tag tag) {
-            return ResourceLocation.tryParse(tag.getAsString());
+        public Identifier read(Tag tag) {
+            return Identifier.tryParse(tag.getAsString());
         }
     };
 }

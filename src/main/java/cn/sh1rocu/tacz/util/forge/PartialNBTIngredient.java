@@ -10,7 +10,7 @@ import net.minecraft.advancements.critereon.NbtPredicate;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -76,13 +76,13 @@ public class PartialNBTIngredient implements CustomIngredient {
         return Serializer.INSTANCE;
     }
 
-    public static final ResourceLocation ID = new ResourceLocation("forge", "partial_nbt");
+    public static final Identifier ID = Identifier.fromNamespaceAndPath("forge", "partial_nbt");
 
     public static class Serializer implements CustomIngredientSerializer<PartialNBTIngredient> {
         public static final Serializer INSTANCE = new Serializer();
 
         @Override
-        public ResourceLocation getIdentifier() {
+        public Identifier getIdentifier() {
             return ID;
         }
 
@@ -126,7 +126,7 @@ public class PartialNBTIngredient implements CustomIngredient {
 
         @Override
         public PartialNBTIngredient read(FriendlyByteBuf buffer) {
-            Set<Item> items = Stream.generate(() -> BuiltInRegistries.ITEM.get(buffer.readResourceLocation())).limit(buffer.readVarInt()).collect(Collectors.toSet());
+            Set<Item> items = Stream.generate(() -> BuiltInRegistries.ITEM.get(buffer.readIdentifier())).limit(buffer.readVarInt()).collect(Collectors.toSet());
             CompoundTag nbt = buffer.readNbt();
             return new PartialNBTIngredient(items, Objects.requireNonNull(nbt));
         }
@@ -135,7 +135,7 @@ public class PartialNBTIngredient implements CustomIngredient {
         public void write(FriendlyByteBuf buffer, PartialNBTIngredient ingredient) {
             buffer.writeVarInt(ingredient.items.size());
             for (Item item : ingredient.items)
-                buffer.writeResourceLocation(BuiltInRegistries.ITEM.getKey(item));
+                buffer.writeIdentifier(BuiltInRegistries.ITEM.getKey(item));
             buffer.writeNbt(ingredient.nbt);
         }
     }

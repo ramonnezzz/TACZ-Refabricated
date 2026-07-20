@@ -5,27 +5,28 @@ import com.tacz.guns.GunMod;
 import com.tacz.guns.api.event.common.EntityHurtByGunEvent;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.networking.v1.FabricPacket;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
-import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 
 import javax.annotation.Nullable;
 
-public class ServerMessageGunHurt implements FabricPacket {
-    public static final PacketType<ServerMessageGunHurt> TYPE = PacketType.create(new ResourceLocation(GunMod.MOD_ID, "s2c_gunhurt"), ServerMessageGunHurt::new);
+public class ServerMessageGunHurt implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<ServerMessageGunHurt> TYPE = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "s2c_gunhurt"));
+    public static final StreamCodec<FriendlyByteBuf, ServerMessageGunHurt> STREAM_CODEC = CustomPacketPayload.codec(ServerMessageGunHurt::write, ServerMessageGunHurt::new);
 
     private final int bulletId;
     private final int hurtEntityId;
     private final int attackerId;
-    private final ResourceLocation gunId;
-    private final ResourceLocation gunDisplayId;
+    private final Identifier gunId;
+    private final Identifier gunDisplayId;
     private final float amount;
     private final boolean isHeadShot;
     private final float headshotMultiplier;
@@ -33,12 +34,12 @@ public class ServerMessageGunHurt implements FabricPacket {
     public ServerMessageGunHurt(FriendlyByteBuf buf) {
         this(
                 buf.readInt(), buf.readInt(), buf.readInt(),
-                buf.readResourceLocation(), buf.readResourceLocation(),
+                buf.readIdentifier(), buf.readIdentifier(),
                 buf.readFloat(), buf.readBoolean(), buf.readFloat()
         );
     }
 
-    public ServerMessageGunHurt(int bulletId, int hurtEntityId, int attackerId, ResourceLocation gunId, ResourceLocation gunDisplayId,
+    public ServerMessageGunHurt(int bulletId, int hurtEntityId, int attackerId, Identifier gunId, Identifier gunDisplayId,
                                 float amount, boolean isHeadShot, float headshotMultiplier) {
         this.bulletId = bulletId;
         this.hurtEntityId = hurtEntityId;
@@ -50,20 +51,19 @@ public class ServerMessageGunHurt implements FabricPacket {
         this.headshotMultiplier = headshotMultiplier;
     }
 
-    @Override
     public void write(FriendlyByteBuf buf) {
         buf.writeInt(bulletId);
         buf.writeInt(hurtEntityId);
         buf.writeInt(attackerId);
-        buf.writeResourceLocation(gunId);
-        buf.writeResourceLocation(gunDisplayId);
+        buf.writeIdentifier(gunId);
+        buf.writeIdentifier(gunDisplayId);
         buf.writeFloat(amount);
         buf.writeBoolean(isHeadShot);
         buf.writeFloat(headshotMultiplier);
     }
 
     @Override
-    public PacketType<?> getType() {
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 

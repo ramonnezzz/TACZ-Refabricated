@@ -4,7 +4,7 @@ import com.tacz.guns.api.DefaultAssets;
 import com.tacz.guns.api.item.IBlock;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 
 import javax.annotation.Nonnull;
@@ -16,17 +16,17 @@ public interface BlockItemDataAccessor extends IBlock {
 
     @Override
     @Nonnull
-    default ResourceLocation getBlockId(ItemStack block) {
+    default Identifier getBlockId(ItemStack block) {
         CompoundTag nbt = block.getOrCreateTag();
         if (nbt.contains(BLOCK_ID, Tag.TAG_STRING)) {
-            ResourceLocation gunId = ResourceLocation.tryParse(nbt.getString(BLOCK_ID));
+            Identifier gunId = Identifier.tryParse(nbt.getString(BLOCK_ID));
             return Objects.requireNonNullElse(gunId, DefaultAssets.EMPTY_BLOCK_ID);
         }
         return DefaultAssets.EMPTY_BLOCK_ID;
     }
 
     @Override
-    default void setBlockId(ItemStack block, @Nullable ResourceLocation blockId) {
+    default void setBlockId(ItemStack block, @Nullable Identifier blockId) {
         CompoundTag nbt = block.getOrCreateTag();
         if (blockId != null) {
             nbt.putString(BLOCK_ID, blockId.toString());

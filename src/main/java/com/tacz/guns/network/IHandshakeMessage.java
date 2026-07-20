@@ -1,18 +1,17 @@
 package com.tacz.guns.network;
 
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
-import net.fabricmc.fabric.api.networking.v1.FabricPacket;
+import io.netty.channel.ChannelFutureListener;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.minecraft.network.Connection;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Consumer;
 
-public interface IHandshakeMessage extends FabricPacket {
-    @Nullable IResponsePacket handle(Connection connection, Consumer<GenericFutureListener<? extends Future<? super Void>>> consumer);
+public interface IHandshakeMessage extends CustomPacketPayload {
+    @Nullable IResponsePacket handle(Connection connection, Consumer<ChannelFutureListener> consumer);
 
     interface IResponsePacket {
         void write(FriendlyByteBuf buf);
@@ -21,6 +20,6 @@ public interface IHandshakeMessage extends FabricPacket {
 
         void handle(PacketSender sender);
 
-        ResourceLocation getId();
+        Identifier getId();
     }
 }

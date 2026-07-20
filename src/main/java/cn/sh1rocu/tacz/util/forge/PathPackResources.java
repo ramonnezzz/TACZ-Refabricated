@@ -2,7 +2,7 @@ package cn.sh1rocu.tacz.util.forge;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.FileUtil;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.AbstractPackResources;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.IoSupplier;
@@ -113,11 +113,11 @@ public class PathPackResources extends AbstractPackResources {
     }
 
     @Override
-    public IoSupplier<InputStream> getResource(PackType type, ResourceLocation location) {
+    public IoSupplier<InputStream> getResource(PackType type, Identifier location) {
         return this.getRootResource(getPathFromLocation(location.getPath().startsWith("lang/") ? PackType.CLIENT_RESOURCES : type, location));
     }
 
-    private static String[] getPathFromLocation(PackType type, ResourceLocation location) {
+    private static String[] getPathFromLocation(PackType type, Identifier location) {
         String[] parts = location.getPath().split("/");
         String[] result = new String[parts.length + 2];
         result[0] = type.getDirectory();

@@ -1,13 +1,12 @@
 package com.tacz.guns.client.gui.components;
 
 import com.google.common.collect.ImmutableList;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.tacz.guns.client.gui.GunSmithTableScreen;
 import com.tacz.guns.client.resource.ClientAssetsManager;
 import com.tacz.guns.client.resource.pojo.PackInfo;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.ContainerObjectSelectionList;
@@ -16,8 +15,10 @@ import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.narration.NarratedElementType;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
 
 import java.util.*;
@@ -30,13 +31,11 @@ public class GunPackList extends ContainerObjectSelectionList<GunPackList.Entry>
     private final EditBox byName;
 
     public GunPackList(Minecraft pMinecraft, int pWidth, int pHeight, int pY0, int pY1, int pItemHeight,
-                       Map<ResourceLocation, List<ResourceLocation>> recipes, GunSmithTableScreen parent) {
+                       Map<Identifier, List<Identifier>> recipes, GunSmithTableScreen parent) {
         super(pMinecraft, pWidth, pHeight, pY0, pY1, pItemHeight);
-        this.setRenderBackground(false);
-        this.setRenderTopAndBottom(false);
         this.parent = parent;
         Set<String> namespaces = new HashSet<>();
-        for (List<ResourceLocation> entry : recipes.values()) {
+        for (List<Identifier> entry : recipes.values()) {
             entry.forEach((resourceLocation) -> namespaces.add(resourceLocation.getNamespace()));
         }
 
@@ -113,43 +112,20 @@ public class GunPackList extends ContainerObjectSelectionList<GunPackList.Entry>
         parent.setIndexPage(0);
     }
 
-    protected int getScrollbarPosition() {
-        return this.x1 - 2;
-    }
-
+    // setRenderBackground/setRenderTopAndBottom sumiram - a AbstractSelectionList nova não tem
+    // mais esse toggle, então o fundo customizado (preto translúcido, em vez do vanilla) é feito
+    // sobrescrevendo extractListBackground diretamente
     @Override
-    public void render(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
-        this.renderBackground(pGuiGraphics);
-        pGuiGraphics.fill(this.x0, this.y0, this.x1, this.y1, 0x80000000);
-        int i = this.getScrollbarPosition();
-        int j = i + 6;
-
-        this.enableScissor(pGuiGraphics);
-        this.renderList(pGuiGraphics, pMouseX, pMouseY, pPartialTick);
-        pGuiGraphics.disableScissor();
-
-        int i2 = this.getMaxScroll();
-        if (i2 > 0) {
-            int j2 = (int) ((float) ((this.y1 - this.y0) * (this.y1 - this.y0)) / (float) this.getMaxPosition());
-            j2 = Mth.clamp(j2, 32, this.y1 - this.y0 - 8);
-            int k1 = (int) this.getScrollAmount() * (this.y1 - this.y0 - j2) / i2 + this.y0;
-            if (k1 < this.y0) {
-                k1 = this.y0;
-            }
-            pGuiGraphics.fill(i, k1, j, k1 + j2, -8355712);
-            pGuiGraphics.fill(i, k1, j - 1, k1 + j2 - 1, -4144960);
-        }
-        this.renderDecorations(pGuiGraphics, pMouseX, pMouseY);
-
-        RenderSystem.disableBlend();
+    protected void extractListBackground(GuiGraphicsExtractor graphics) {
+        graphics.fill(this.getX(), this.getY(), this.getX() + this.getWidth(), this.getY() + this.getHeight(), 0x80000000);
     }
 
     public int getRowLeft() {
-        return this.x0 + 4;
+        return this.getX() + 4;
     }
 
     public int getRowWidth() {
-        return this.width;
+        return this.getWidth();
     }
 
     public static class Entry extends ContainerObjectSelectionList.Entry<Entry> {
@@ -165,10 +141,10 @@ public class GunPackList extends ContainerObjectSelectionList<GunPackList.Entry>
         }
 
         @Override
-        public void render(GuiGraphics pGuiGraphics, int pIndex, int pTop, int pLeft, int pWidth, int pHeight, int pMouseX, int pMouseY, boolean pHovering, float pPartialTick) {
-            this.widget.setX(pLeft);
-            this.widget.setY(pTop);
-            this.widget.render(pGuiGraphics, pMouseX, pMouseY, pPartialTick);
+        public void extractContent(GuiGraphicsExtractor pGuiGraphics, int pMouseX, int pMouseY, boolean pHovering, float pPartialTick) {
+            this.widget.setX(this.getX());
+            this.widget.setY(this.getY());
+            this.widget.extractRenderState(pGuiGraphics, pMouseX, pMouseY, pPartialTick);
         }
 
         @Override
@@ -178,7 +154,7 @@ public class GunPackList extends ContainerObjectSelectionList<GunPackList.Entry>
     }
 
     public static class Checkbox extends AbstractButton {
-        private static final ResourceLocation TEXTURE = new ResourceLocation("textures/gui/checkbox.png");
+        private static final Identifier TEXTURE = Identifier.parse("textures/gui/checkbox.png");
         protected boolean selected;
         protected final boolean showLabel;
         private String id;
@@ -222,16 +198,15 @@ public class GunPackList extends ContainerObjectSelectionList<GunPackList.Entry>
 
         }
 
-        public void renderWidget(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
+        @Override
+        protected void extractContents(GuiGraphicsExtractor pGuiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
             Minecraft minecraft = Minecraft.getInstance();
-            RenderSystem.enableDepthTest();
             Font font = minecraft.font;
-            pGuiGraphics.setColor(1.0F, 1.0F, 1.0F, this.alpha);
-            RenderSystem.enableBlend();
-            pGuiGraphics.blit(TEXTURE, this.getX(), this.getY(), this.isFocused() ? 10.0F : 0.0F, this.selected ? 10.0F : 0.0F, 10, 10, 32, 32);
-            pGuiGraphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
+            // Sem setColor persistente: a cor/alpha vai direto no blit
+            int tint = ARGB.white(this.alpha);
+            pGuiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, this.getX(), this.getY(), this.isFocused() ? 10 : 0, this.selected ? 10 : 0, 10, 10, 32, 32, tint);
             if (this.showLabel) {
-                pGuiGraphics.drawString(font, this.getMessage(), this.getX() + 24, this.getY() + (this.height - 8) / 2, 14737632 | Mth.ceil(this.alpha * 255.0F) << 24);
+                pGuiGraphics.text(font, this.getMessage(), this.getX() + 24, this.getY() + (this.height - 8) / 2, 14737632 | Mth.ceil(this.alpha * 255.0F) << 24);
             }
 
         }

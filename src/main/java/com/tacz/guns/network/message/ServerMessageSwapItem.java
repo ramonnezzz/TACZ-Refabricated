@@ -2,15 +2,16 @@ package com.tacz.guns.network.message;
 
 import com.tacz.guns.GunMod;
 import com.tacz.guns.api.client.event.SwapItemWithOffHand;
-import net.fabricmc.fabric.api.networking.v1.FabricPacket;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
-import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 
-public class ServerMessageSwapItem implements FabricPacket {
-    public static final PacketType<ServerMessageSwapItem> TYPE = PacketType.create(new ResourceLocation(GunMod.MOD_ID, "s2c_swap_item"), ServerMessageSwapItem::new);
+public class ServerMessageSwapItem implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<ServerMessageSwapItem> TYPE = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "s2c_swap_item"));
+    public static final StreamCodec<FriendlyByteBuf, ServerMessageSwapItem> STREAM_CODEC = CustomPacketPayload.codec(ServerMessageSwapItem::write, ServerMessageSwapItem::new);
 
     public ServerMessageSwapItem() {
 
@@ -20,13 +21,12 @@ public class ServerMessageSwapItem implements FabricPacket {
         this();
     }
 
-    @Override
     public void write(FriendlyByteBuf buf) {
 
     }
 
     @Override
-    public PacketType<?> getType() {
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 

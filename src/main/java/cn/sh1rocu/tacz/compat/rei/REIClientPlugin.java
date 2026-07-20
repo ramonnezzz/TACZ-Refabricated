@@ -16,7 +16,7 @@ import me.shedaniel.rei.api.common.category.CategoryIdentifier;
 import me.shedaniel.rei.api.common.util.EntryStacks;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeManager;
@@ -29,7 +29,7 @@ import java.util.Objects;
 public class REIClientPlugin implements me.shedaniel.rei.api.client.plugins.REIClientPlugin {
     public static final CategoryIdentifier<AttachmentQueryDisplay> ATTACHMENT_QUERY = CategoryIdentifier.of(GunMod.MOD_ID, "plugins/attachment_query");
 
-    public static final Map<ResourceLocation, CategoryIdentifier<GunSmithTableDisplay>> displays = new HashMap<>();
+    public static final Map<Identifier, CategoryIdentifier<GunSmithTableDisplay>> displays = new HashMap<>();
 
     @Override
     public void registerCategories(CategoryRegistry registry) {
@@ -50,7 +50,7 @@ public class REIClientPlugin implements me.shedaniel.rei.api.client.plugins.REIC
     public void registerDisplays(DisplayRegistry registry) {
         if (Minecraft.getInstance().level == null) return;
         RecipeManager recipeManager = Minecraft.getInstance().level.getRecipeManager();
-        List<GunSmithTableRecipe> recipes = recipeManager.getAllRecipesFor(ModRecipe.GUN_SMITH_TABLE_CRAFTING);
+        List<GunSmithTableRecipe> recipes = ModRecipe.getAllGunSmithTableRecipes(recipeManager);
 
         for (var entry : displays.entrySet()) {
             TimelessAPI.getCommonBlockIndex(entry.getKey()).ifPresent(blockIndex -> {

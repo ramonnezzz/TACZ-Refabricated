@@ -6,7 +6,8 @@ import net.fabricmc.fabric.api.recipe.v1.ingredient.CustomIngredientSerializer;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
@@ -59,13 +60,13 @@ public class StrictNBTIngredient implements CustomIngredient {
         return Serializer.INSTANCE;
     }
 
-    public static final ResourceLocation ID = new ResourceLocation("forge", "nbt");
+    public static final Identifier ID = Identifier.fromNamespaceAndPath("forge", "nbt");
 
     public static class Serializer implements CustomIngredientSerializer<StrictNBTIngredient> {
         public static final Serializer INSTANCE = new Serializer();
 
         @Override
-        public ResourceLocation getIdentifier() {
+        public Identifier getIdentifier() {
             return ID;
         }
 
@@ -85,12 +86,12 @@ public class StrictNBTIngredient implements CustomIngredient {
 
         @Override
         public StrictNBTIngredient read(FriendlyByteBuf buffer) {
-            return new StrictNBTIngredient(buffer.readItem());
+            return new StrictNBTIngredient(ItemStack.OPTIONAL_STREAM_CODEC.decode((RegistryFriendlyByteBuf) buffer));
         }
 
         @Override
         public void write(FriendlyByteBuf buffer, StrictNBTIngredient ingredient) {
-            buffer.writeItem(ingredient.stack);
+            ItemStack.OPTIONAL_STREAM_CODEC.encode((RegistryFriendlyByteBuf) buffer, ingredient.stack);
         }
     }
 }

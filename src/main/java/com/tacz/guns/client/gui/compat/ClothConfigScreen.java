@@ -1,8 +1,9 @@
 package com.tacz.guns.client.gui.compat;
 
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.TextAlignment;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.MultiLineLabel;
 import net.minecraft.client.gui.screens.ConfirmLinkScreen;
@@ -38,10 +39,10 @@ public class ClothConfigScreen extends Screen {
     }
 
     @Override
-    public void render(@NotNull GuiGraphics gui, int pMouseX, int pMouseY, float pPartialTick) {
-        this.renderBackground(gui);
-        this.message.renderCentered(gui, this.width / 2, 80);
-        super.render(gui, pMouseX, pMouseY, pPartialTick);
+    public void extractRenderState(@NotNull GuiGraphicsExtractor gui, int pMouseX, int pMouseY, float pPartialTick) {
+        this.extractBackground(gui, pMouseX, pMouseY, pPartialTick);
+        this.message.visitLines(TextAlignment.CENTER, this.width / 2, 80, this.font.lineHeight, gui.textRenderer());
+        super.extractRenderState(gui, pMouseX, pMouseY, pPartialTick);
     }
 
     private void openUrl(String url) {

@@ -2,15 +2,16 @@ package com.tacz.guns.network.message;
 
 import com.tacz.guns.GunMod;
 import com.tacz.guns.api.entity.IGunOperator;
-import net.fabricmc.fabric.api.networking.v1.FabricPacket;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
-import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 
-public class ClientMessagePlayerBoltGun implements FabricPacket {
-    public static final PacketType<ClientMessagePlayerBoltGun> TYPE = PacketType.create(new ResourceLocation(GunMod.MOD_ID, "c2s_player_bolt_gun"), ClientMessagePlayerBoltGun::new);
+public class ClientMessagePlayerBoltGun implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<ClientMessagePlayerBoltGun> TYPE = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(GunMod.MOD_ID, "c2s_player_bolt_gun"));
+    public static final StreamCodec<FriendlyByteBuf, ClientMessagePlayerBoltGun> STREAM_CODEC = CustomPacketPayload.codec(ClientMessagePlayerBoltGun::write, ClientMessagePlayerBoltGun::new);
 
     public ClientMessagePlayerBoltGun() {
 
@@ -20,12 +21,11 @@ public class ClientMessagePlayerBoltGun implements FabricPacket {
         this();
     }
 
-    @Override
     public void write(FriendlyByteBuf buf) {
     }
 
     @Override
-    public PacketType<?> getType() {
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 

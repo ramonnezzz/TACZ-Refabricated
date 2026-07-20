@@ -7,7 +7,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.NotNull;
 
 public class ModParticles {
@@ -18,7 +18,7 @@ public class ModParticles {
     public static final ParticleType<BulletHoleOption> BULLET_HOLE = register("bullet_hole", new ModParticleType<>(false, BulletHoleOption.DESERIALIZER, BulletHoleOption.CODEC));
 
     private static <T extends ParticleOptions> ParticleType<T> register(String name, ParticleType<T> type) {
-        return Registry.register(BuiltInRegistries.PARTICLE_TYPE, new ResourceLocation(GunMod.MOD_ID, name), type);
+        return Registry.register(BuiltInRegistries.PARTICLE_TYPE, Identifier.fromNamespaceAndPath(GunMod.MOD_ID, name), type);
     }
 
     @SuppressWarnings("deprecation")
