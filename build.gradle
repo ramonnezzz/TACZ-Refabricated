@@ -184,7 +184,7 @@ dependencies {
     // MKB — TRAVADO em "1.20.X" no nome do artifact
     // modImplementation(include("maven.modrinth:modernkeybinding:1.20.X-1.2.0"))
 
-    modImplementation "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:8.0.2"
+    implementation "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:26.2.1"
 
     implementation("com.terraformersmc:modmenu:20.0.1")
 
