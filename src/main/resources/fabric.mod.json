@@ -33,7 +33,7 @@
   },
   "custom": {
     "loom:injected_interfaces": {
-      "net/minecraft/class_1309": [
+      "net/minecraft/world/entity/LivingEntity": [
         "cn/sh1rocu/tacz/api/mixin/ItemHandlerCapability"
       ]
     }

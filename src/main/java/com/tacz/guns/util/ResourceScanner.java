@@ -5,12 +5,13 @@ import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
+import com.google.gson.Strictness;
+import com.google.gson.stream.JsonReader;
 import com.tacz.guns.GunMod;
 import net.minecraft.resources.FileToIdConverter;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.util.GsonHelper;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -18,6 +19,19 @@ import java.util.List;
 import java.util.Map;
 
 public class ResourceScanner {
+    /**
+     * Gunpacks usam JSON relaxado (vírgulas sobrando, comentários); o Gson do 26.2 é estrito por
+     * padrão, então o parse precisa pedir leniência explicitamente — era o comportamento do 1.20.1.
+     */
+    public static <T> T lenientFromJson(Gson gson, Reader reader, Class<T> clazz) {
+        JsonReader jsonReader = new JsonReader(reader);
+        jsonReader.setStrictness(Strictness.LENIENT);
+        T result = gson.fromJson(jsonReader, clazz);
+        if (result == null) {
+            throw new JsonParseException("JSON document was empty");
+        }
+        return result;
+    }
     /**
      * 扫描指定目录下的所有json文件<br>
      * 与原版的scanDirectory方法的区别在于，查询结果是作为返回值返回的，而且允许注释
@@ -39,7 +53,7 @@ public class ResourceScanner {
             Identifier resourcelocation1 = filetoidconverter.fileToId(resourcelocation);
 
             try (Reader reader = entry.getValue().openAsReader()) {
-                JsonElement jsonelement = GsonHelper.fromJson(pGson, reader, JsonElement.class);
+                JsonElement jsonelement = lenientFromJson(pGson, reader, JsonElement.class);
                 JsonElement jsonelement1 = output.put(resourcelocation1, jsonelement);
                 if (jsonelement1 != null) {
                     throw new IllegalStateException("Duplicate data file ignored with ID " + resourcelocation1);
@@ -81,7 +95,7 @@ public class ResourceScanner {
 
             for (Resource resource : entry.getValue()) {
                 try (Reader reader = resource.openAsReader()) {
-                    JsonElement jsonelement = GsonHelper.fromJson(pGson, reader, JsonElement.class);
+                    JsonElement jsonelement = lenientFromJson(pGson, reader, JsonElement.class);
                     List<JsonElement> list = output.computeIfAbsent(resourcelocation1, k -> Lists.newArrayList());
                     list.add(jsonelement);
                 } catch (IllegalArgumentException | IOException | JsonParseException jsonparseexception) {

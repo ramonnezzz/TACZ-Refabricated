@@ -45,7 +45,8 @@ public abstract class ChannelAccessHandleMixin implements ChannelAccessHandleInj
         this.tacz$soundInstance = instance;
     }
 
-    @Inject(method = "method_19737", at = @At(value = "INVOKE", target = "Ljava/util/function/Consumer;accept(Ljava/lang/Object;)V", shift = At.Shift.AFTER))
+    // "method_19737" era o nome intermediary (pré-26.x); com o jogo desobfuscado o alvo é o nome real
+    @Inject(method = "execute", at = @At(value = "INVOKE", target = "Ljava/util/function/Consumer;accept(Ljava/lang/Object;)V", shift = At.Shift.AFTER))
     private void tacz$callPlaySoundEvents(Consumer<Channel> consumer, CallbackInfo ci) {
         if (this.channel != null && tacz$soundEngine != null && tacz$soundInstance != null && SoundConsumerStorage.soundConsumerChannels.remove(consumer)) {
             if (tacz$pool == Library.Pool.STATIC) {

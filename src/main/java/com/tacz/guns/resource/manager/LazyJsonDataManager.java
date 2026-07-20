@@ -12,7 +12,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
-import net.minecraft.util.GsonHelper;
 import net.minecraft.util.profiling.ProfilerFiller;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -149,7 +148,7 @@ public class LazyJsonDataManager<T> extends SimplePreparableReloadListener<LazyJ
     @Nullable
     protected final JsonElement readResourceElement(ResourceManager manager, Identifier resourcePath) {
         try (Reader reader = openReader(manager, resourcePath)) {
-            return reader == null ? null : GsonHelper.fromJson(gson, reader, JsonElement.class);
+            return reader == null ? null : ResourceScanner.lenientFromJson(gson, reader, JsonElement.class);
         } catch (IOException | JsonParseException | IllegalArgumentException exception) {
             GunMod.LOGGER.error(marker, "Failed to read raw data file {}", resourcePath, exception);
             return null;
