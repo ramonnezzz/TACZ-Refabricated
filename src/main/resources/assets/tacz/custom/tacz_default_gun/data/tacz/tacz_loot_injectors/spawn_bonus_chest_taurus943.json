@@ -11,7 +11,7 @@
           "name": "tacz:modern_kinetic_gun",
           "functions": [
             {
-              "function": "minecraft:set_nbt",
+              "function": "minecraft:set_custom_data",
               "tag": "{GunId:\"tacz:taurus943\",GunFireMode:\"SEMI\"}"
             }
           ]
@@ -26,7 +26,7 @@
           "name": "tacz:ammo",
           "functions": [
             {
-              "function": "minecraft:set_nbt",
+              "function": "minecraft:set_custom_data",
               "tag": "{AmmoId:\"tacz:22wmr\"}"
             },
             {
