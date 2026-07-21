@@ -20,6 +20,21 @@ import sys
 SRC = "src/main/java"
 
 
+def excluded_globs():
+    """Lê os exclude '...' do sourceSets no build.gradle (fonte desativada do port)."""
+    try:
+        bg = open("build.gradle", encoding="utf-8", errors="ignore").read()
+    except OSError:
+        return []
+    return re.findall(r"exclude\s+'([^']+)'", bg)
+
+
+def is_excluded(rel_java_path, globs):
+    # rel_java_path relativo a src/main/java, ex: cn/sh1rocu/tacz/mixin/.../Foo.java
+    import fnmatch
+    return any(fnmatch.fnmatch(rel_java_path, g) or fnmatch.fnmatch(rel_java_path, g + "*") for g in globs)
+
+
 def find_jar(argv):
     if len(argv) > 1:
         return argv[1]
@@ -119,7 +134,13 @@ def main():
 
     broken = []
     cache = {}
+    globs = excluded_globs()
+    skipped = 0
     for f in sorted(glob.glob(f"{SRC}/**/*Mixin*.java", recursive=True)):
+        rel_java = os.path.relpath(f, SRC)
+        if is_excluded(rel_java, globs):
+            skipped += 1
+            continue
         txt = open(f, encoding="utf-8", errors="ignore").read()
         if "@Mixin" not in txt:
             continue
@@ -148,8 +169,10 @@ def main():
                 if mname not in names:
                     broken.append((rel, target, spec, "método NÃO existe", candidates(sigs, mname)))
 
+    if skipped:
+        print(f"(ignorados {skipped} mixin(s) excluído(s) do build via sourceSets)\n")
     if not broken:
-        print("OK — todos os alvos de método dos mixins existem no jar 26.2.")
+        print("OK — todos os alvos de método dos mixins ativos existem no jar 26.2.")
         return
     print("ALVOS QUEBRADOS (arquivo | classe | method= | motivo):\n")
     for rel, target, spec, why, cands in broken:
