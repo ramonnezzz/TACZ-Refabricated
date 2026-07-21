@@ -76,12 +76,12 @@ def javap_methods(jar, fqn):
         return None, "classe não encontrada no jar"
     names = set()
     pairs = set()
+    sigs = []  # (name, descriptor) na ordem, pra listar candidatos
     lines = out.splitlines()
     for i, ln in enumerate(lines):
         mm = re.search(r'\b([A-Za-z0-9_$<>]+)\(', ln)
         if mm and ("(" in ln) and (";" in ln or "{" in ln):
             name = mm.group(1)
-            # construtores aparecem como o nome da classe; normaliza <init>
             if name == fqn.split(".")[-1].split("$")[-1]:
                 name = "<init>"
             desc = None
@@ -93,7 +93,20 @@ def javap_methods(jar, fqn):
             names.add(name)
             if desc:
                 pairs.add((name, desc))
-    return (names, pairs), None
+                sigs.append((name, desc))
+    return (names, pairs, sigs), None
+
+
+def candidates(sigs, mname):
+    """Métodos da classe cujo nome parece relacionado ao alvo quebrado."""
+    key = mname.lower()
+    hit = [(n, d) for n, d in sigs if n.lower() == key]
+    if hit:
+        return hit
+    # tenta por stem (troca de nome): compartilha um token de 4+ chars
+    toks = [t.lower() for t in re.findall(r'[A-Za-z]{4,}', mname)]
+    rel = [(n, d) for n, d in sigs if any(t in n.lower() for t in toks)]
+    return rel[:12]
 
 
 def main():
@@ -119,29 +132,33 @@ def main():
         info, err = cache[target]
         rel = os.path.relpath(f)
         if err:
-            broken.append((rel, target, "-", err))
+            broken.append((rel, target, "-", err, []))
             continue
-        names, pairs = info
+        names, pairs, sigs = info
         for spec in methods:
             mname = spec.split("(")[0]
-            if mname in ("<init>",):
+            if mname in ("<init>", "*") or mname.startswith("lambda"):
                 continue
             if "(" in spec:
                 desc = spec[spec.index("("):]
-                ok = (mname, desc) in pairs or mname in names  # nome ok mas descriptor mudou => reporta
                 if (mname, desc) not in pairs:
                     hint = "método existe, DESCRIPTOR mudou" if mname in names else "método NÃO existe"
-                    broken.append((rel, target, spec, hint))
+                    broken.append((rel, target, spec, hint, candidates(sigs, mname)))
             else:
                 if mname not in names:
-                    broken.append((rel, target, spec, "método NÃO existe"))
+                    broken.append((rel, target, spec, "método NÃO existe", candidates(sigs, mname)))
 
     if not broken:
         print("OK — todos os alvos de método dos mixins existem no jar 26.2.")
         return
     print("ALVOS QUEBRADOS (arquivo | classe | method= | motivo):\n")
-    for rel, target, spec, why in broken:
-        print(f"- {rel}\n    classe : {target}\n    method : {spec}\n    motivo : {why}\n")
+    for rel, target, spec, why, cands in broken:
+        print(f"- {rel}\n    classe : {target}\n    method : {spec}\n    motivo : {why}")
+        if cands:
+            print("    candidatos no jar:")
+            for n, d in cands:
+                print(f"        {n}{d}")
+        print()
     print(f"total: {len(broken)} alvo(s) quebrado(s)")
 
 
