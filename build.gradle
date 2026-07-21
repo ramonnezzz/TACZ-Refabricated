@@ -78,6 +78,10 @@ sourceSets {
             // internos (_texImage2D/_glFramebufferTexture2D) também mudaram de assinatura.
             // Morto de qualquer jeito, exclui em vez de portar bytecode-level GL hooks pra nada.
             exclude 'cn/sh1rocu/tacz/mixin/client/RenderTargetMixin.java'
+            // Tweakeroo não tem build 26.2 e Item.getMaxStackSize(ItemStack) sumiu (foi pro
+            // sistema de DataComponents), sem sucessor direto — o stack size custom de munição
+            // precisa ser reimplementado via componente. Desativado até lá (fora do mixins.json).
+            exclude 'cn/sh1rocu/tacz/mixin/compat/tweakeroo/ItemMixin.java'
         }
     }
 }

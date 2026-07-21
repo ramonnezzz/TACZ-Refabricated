@@ -24,8 +24,7 @@
     "common.ServerPacksSourceMixin",
     "common.itemhandler.AbstractHorseMixin",
     "common.itemhandler.LivingEntityMixin",
-    "common.itemhandler.PlayerMixin",
-    "compat.tweakeroo.ItemMixin"
+    "common.itemhandler.PlayerMixin"
   ],
   "client": [
     "accessor.AbstractSliderButtonAccessor",
